@@ -65,7 +65,7 @@ export class LaserTower extends Tower {
         this.baseDamage = 4;
         this.chargeRate = 2;
         this.maxCharge = 15;
-        this.fireRate = 0.22; // НЕ ИСПОЛЬЗУЕТСЯ ДЛЯ СТРЕЛЬБЫ (но оставлен для совместимости)
+        this.fireRate = 0.22;
         this.range = 220;
         this.cost = 1000;
         this.upgradeCost = 700;
@@ -79,20 +79,20 @@ export class LaserTower extends Tower {
         this.totalDamage = 0;
         this.shootFlash = 0;
         this.particles = [];
-        // КУЛДАУН УБРАН – АТАКУЕМ КАЖДЫЙ КАДР
     }
 
     upgrade() {
         if (this.level >= this.maxLevel) return;
         this.level++;
-        // Микро-апгрейды
-        this.baseDamage += 0.2;
-        this.chargeRate += 0.3;
-        this.maxCharge += 1;
-        this.range = Math.floor(this.range * 1.015);
-        // Скорость атаки не меняется
+        // ----- МИКРО-АПГРЕЙДЫ (почти незаметные) -----
+        this.baseDamage += 0.2;           // +0.2 урона за уровень
+        this.chargeRate += 0.3;           // +0.3 к скорости зарядки
+        this.maxCharge += 1;              // +1 к максимуму заряда
+        this.range = Math.floor(this.range * 1.015); // +1.5% радиуса
+        // Скорость атаки НЕ МЕНЯЕТСЯ
         this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
+        // Обновляем текущий урон (без баффов)
         this.damage = this.baseDamage;
         if (this.isBuffed) {
             this.damage = Math.floor(this.baseDamage * this.buffDamageMult);
@@ -106,7 +106,6 @@ export class LaserTower extends Tower {
             return;
         }
 
-        // Поиск цели
         if (this.target) {
             if (!this.target.isAlive() || !this.isInRange(this.target)) {
                 this.target = null;
@@ -122,9 +121,7 @@ export class LaserTower extends Tower {
             }
         }
 
-        // АТАКА КАЖДЫЙ КАДР (без кулдауна)
         if (this.target) {
-            // Зарядка
             this.chargeTimer += deltaTime;
             if (this.chargeTimer >= 0.1) {
                 const chargeAdd = this.chargeRate * 0.1;
@@ -132,13 +129,11 @@ export class LaserTower extends Tower {
                 this.chargeTimer = 0;
             }
 
-            // Текущий урон
             let currentDamage = this.baseDamage + this.charge;
             if (this.isBuffed) {
                 currentDamage = Math.floor(currentDamage * this.buffDamageMult);
             }
 
-            // Создаём луч (каждый кадр)
             const beam = new LaserBeam(this.x, this.y, this.target, currentDamage, this);
             bullets.push(beam);
             this.shootFlash = 0.05;

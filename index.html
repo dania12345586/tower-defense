@@ -52,35 +52,31 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА ВЫБОРА БАШЕН -->
+    <!-- МОДАЛКА ВЫБОРА БАШЕН (без чекбоксов) -->
     <div id="towerSelectModal" class="menu-overlay" style="display: none; z-index: 200;">
         <div class="menu-box" style="max-width: 600px;">
             <h2>Выберите башни (макс. 4)</h2>
             <div class="tower-select-grid">
-                <label class="tower-card" data-tower="pistol">
-                    <input type="checkbox" class="tower-checkbox" value="pistol" checked>
+                <div class="tower-card" data-tower="pistol">
                     <span class="tower-icon">🔫</span>
                     <span class="tower-name">Пистолетчик</span>
                     <span class="tower-cost">60💰</span>
-                </label>
-                <label class="tower-card" data-tower="flame">
-                    <input type="checkbox" class="tower-checkbox" value="flame" checked>
+                </div>
+                <div class="tower-card" data-tower="flame">
                     <span class="tower-icon">🔥</span>
                     <span class="tower-name">Огнемёт</span>
                     <span class="tower-cost">200💰</span>
-                </label>
-                <label class="tower-card" data-tower="dj">
-                    <input type="checkbox" class="tower-checkbox" value="dj">
+                </div>
+                <div class="tower-card" data-tower="dj">
                     <span class="tower-icon">🎧</span>
                     <span class="tower-name">DJ</span>
                     <span class="tower-cost">280💰</span>
-                </label>
-                <label class="tower-card" data-tower="electric">
-                    <input type="checkbox" class="tower-checkbox" value="electric">
+                </div>
+                <div class="tower-card" data-tower="electric">
                     <span class="tower-icon">⚡</span>
                     <span class="tower-name">Электрошокер</span>
                     <span class="tower-cost">95💰</span>
-                </label>
+                </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
                 <button id="saveTowerSelectBtn" class="btn big-btn" style="background:#2ecc71;">Сохранить</button>

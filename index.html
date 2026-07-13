@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tower Defense</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ЭКРАН АВТОРИЗАЦИИ (только имя + пароль) -->
+    <div id="authScreen" class="menu-overlay">
+        <div class="menu-box">
+            <h2>🏰 Tower Defense</h2>
+            <div id="authForm">
+                <input type="text" id="authUsername" placeholder="Имя пользователя" class="auth-input">
+                <input type="password" id="authPassword" placeholder="Пароль" class="auth-input">
+                <div class="auth-buttons">
+                    <button id="authLoginBtn" class="btn">Войти</button>
+                    <button id="authRegisterBtn" class="btn">Зарегистрироваться</button>
+                </div>
+            </div>
+            <div id="authMessage" style="color: #ff6b6b; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- ГЛАВНОЕ МЕНЮ (скрыто до авторизации) -->
+    <div id="mainMenu" class="menu-overlay" style="display: none;">
+        <div class="menu-box">
+            <h1>🏰 Tower Defense</h1>
+            <button id="startGameBtn" class="btn big-btn">▶ Играть</button>
+        </div>
+    </div>
+
+    <!-- ВЫБОР БАШЕН -->
+    <div id="towerSelectMenu" class="menu-overlay" style="display: none;">
+        <div class="menu-box">
+            <h2>Выберите башни</h2>
+            <div class="tower-select-grid">
+                <label class="tower-card" data-tower="pistol">
+                    <input type="checkbox" class="tower-checkbox" value="pistol" checked>
+                    <span class="tower-icon">🔫</span>
+                    <span class="tower-name">Пистолетчик</span>
+                    <span class="tower-cost">60💰</span>
+                </label>
+                <label class="tower-card" data-tower="flame">
+                    <input type="checkbox" class="tower-checkbox" value="flame" checked>
+                    <span class="tower-icon">🔥</span>
+                    <span class="tower-name">Огнемёт</span>
+                    <span class="tower-cost">200💰</span>
+                </label>
+                <label class="tower-card" data-tower="dj">
+                    <input type="checkbox" class="tower-checkbox" value="dj">
+                    <span class="tower-icon">🎧</span>
+                    <span class="tower-name">DJ</span>
+                    <span class="tower-cost">280💰</span>
+                </label>
+                <label class="tower-card" data-tower="electric">
+                    <input type="checkbox" class="tower-checkbox" value="electric">
+                    <span class="tower-icon">⚡</span>
+                    <span class="tower-name">Электрошокер</span>
+                    <span class="tower-cost">95💰</span>
+                </label>
+            </div>
+            <button id="towerSelectNextBtn" class="btn big-btn">Далее →</button>
+        </div>
+    </div>
+
+    <!-- ВЫБОР КАРТ -->
+    <div id="mapSelectMenu" class="menu-overlay" style="display: none;">
+        <div class="menu-box">
+            <h2>Выберите карту</h2>
+            <div class="map-select-grid">
+                <label class="map-card selected" data-map="default">
+                    <input type="radio" name="map" value="default" checked>
+                    <div class="map-preview" style="background:#2a2a4a;">🏙️ Город</div>
+                    <span class="map-name">Город</span>
+                </label>
+                <label class="map-card" data-map="forest">
+                    <input type="radio" name="map" value="forest">
+                    <div class="map-preview" style="background:#1a3a1a;">🌲 Лес</div>
+                    <span class="map-name">Лес</span>
+                </label>
+                <label class="map-card" data-map="lunar">
+                    <input type="radio" name="map" value="lunar">
+                    <div class="map-preview" style="background:#1a1a2e;">🌙 Лунная база</div>
+                    <span class="map-name">Лунная база</span>
+                </label>
+                <label class="map-card" data-map="snow">
+                    <input type="radio" name="map" value="snow">
+                    <div class="map-preview" style="background:#b0c4de;">❄️ Снежный перевал</div>
+                    <span class="map-name">Снежный перевал</span>
+                </label>
+                <label class="map-card" data-map="mushroom">
+                    <input type="radio" name="map" value="mushroom">
+                    <div class="map-preview" style="background:#2d5a2d;">🍄 Грибной лес</div>
+                    <span class="map-name">Грибной лес</span>
+                </label>
+                <label class="map-card" data-map="volcano">
+                    <input type="radio" name="map" value="volcano">
+                    <div class="map-preview" style="background:#1a0a0a;">🌋 Адский вулкан</div>
+                    <span class="map-name">Адский вулкан</span>
+                </label>
+            </div>
+            <button id="mapSelectPlayBtn" class="btn big-btn">▶ Играть!</button>
+        </div>
+    </div>
+
+    <!-- ИГРА -->
+    <div id="gameContainer" style="display: none;">
+        <div class="ui-panel">
+            <div class="stats">
+                <span id="gold">💰 Gold: 120</span>
+                <span id="lives">❤️ Lives: 20</span>
+                <span id="wave">🌊 Wave: 1</span>
+            </div>
+            <div class="controls">
+                <button id="startWave" class="btn">Start Wave</button>
+                <button id="speedBtn" class="btn">Скорость: 1x</button>
+                <button id="toggleAdminPanel" class="btn" style="background:#e67e22;">Админ-панель</button>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
+        <div id="adminPanel" style="display:none; background: #1a1a2e; border: 2px solid #e67e22; border-radius: 12px; padding: 15px; margin: 10px 0; width: 100%; max-width: 800px;">
+            <h3 style="color:#e67e22; margin:0 0 10px 0;">🛠️ Админ-панель</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                <label>💰 <input type="number" id="adminGoldAmount" value="100" style="width:60px;"></label>
+                <button id="adminAddGold" class="btn">+ Золото</button>
+                <label>❤️ <input type="number" id="adminLivesAmount" value="5" style="width:60px;"></label>
+                <button id="adminAddLives" class="btn">+ Жизни</button>
+                <button id="adminKillEnemies" class="btn" style="background:#e74c3c;">Убить врагов</button>
+                <label>🌊 Волна <input type="number" id="adminWaveNumber" value="1" style="width:60px;"></label>
+                <button id="adminSetWave" class="btn">Установить волну</button>
+                <button id="adminStartWave" class="btn">Старт волны</button>
+                <button id="adminFinishWave" class="btn" style="background:#e67e22;">Завершить волну</button>
+                <label>⚡ Скорость <input type="number" id="adminSpeedValue" value="1" style="width:60px;"></label>
+                <button id="adminSetSpeed" class="btn">Установить</button>
+                <button id="adminClearAll" class="btn" style="background:#e74c3c;">🧹 Очистить всё</button>
+            </div>
+        </div>
+
+        <div class="game-layout">
+            <div class="shop-panel" id="shopPanel">
+                <div class="shop-title">🏪 Выбор башни</div>
+                <div class="shop-items" id="shopItems"></div>
+                <div class="shop-hint" id="shopHint">Кликните по иконке для выбора</div>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+                <div id="towerPanel" style="display: none;">
+                    <h3>Башня <span id="towerLevel">Ур. 1</span></h3>
+                    <div class="tower-info" id="towerInfo"></div>
+                    <button id="upgradeBtn" class="btn" disabled>Улучшить за 100💰</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

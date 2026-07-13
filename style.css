@@ -1,0 +1,179 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; color:#fff; touch-action:manipulation; }
+
+.menu-overlay {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.85);
+    display:flex; justify-content:center; align-items:center; z-index:100; padding:16px;
+}
+.menu-box {
+    background:linear-gradient(145deg, #1a1a2e, #16213e);
+    padding:30px; border-radius:24px; text-align:center;
+    border:1px solid rgba(0,255,255,0.2);
+    box-shadow:0 20px 60px rgba(0,0,0,0.8);
+    max-width:600px; width:100%; max-height:90vh; overflow-y:auto;
+}
+.menu-box h1 { font-size:3rem; color:#ffd700; margin-bottom:10px; letter-spacing:2px; }
+.menu-box h2 { font-size:2rem; color:#ffd700; margin-bottom:20px; }
+.menu-box p { font-size:1.2rem; color:#aaa; margin-bottom:30px; }
+.big-btn {
+    padding:14px 40px; font-size:1.3rem;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    border:none; border-radius:12px; color:#fff; cursor:pointer;
+    transition:0.3s; margin-top:20px;
+}
+.big-btn:hover { transform:scale(1.05); box-shadow:0 0 30px rgba(102,126,234,0.5); }
+
+.tower-select-grid {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:16px; margin:20px 0;
+}
+.tower-card {
+    background:rgba(255,255,255,0.05);
+    border-radius:16px;
+    padding:16px 12px;
+    text-align:center;
+    border:2px solid transparent;
+    cursor:pointer;
+    transition:0.2s;
+    position:relative;
+    backdrop-filter:blur(4px);
+}
+.tower-card:hover { background:rgba(255,255,255,0.12); transform:translateY(-4px); }
+.tower-card.selected {
+    border-color:#ffd700;
+    background:rgba(255,215,0,0.15);
+    box-shadow:0 0 25px rgba(255,215,0,0.25);
+}
+.tower-card .tower-icon { font-size:48px; display:block; margin-bottom:6px; }
+.tower-card .tower-name { font-weight:bold; font-size:18px; margin:4px 0; }
+.tower-card .tower-cost { font-size:15px; color:#aaa; }
+.tower-card .tower-desc { font-size:13px; color:#888; margin:4px 0; }
+.tower-card .help-btn {
+    position:absolute; top:6px; right:8px;
+    background:rgba(255,255,255,0.1);
+    color:#ccc; border:none; border-radius:50%;
+    width:26px; height:26px; font-size:14px; cursor:pointer;
+    transition:0.2s;
+}
+.tower-card .help-btn:hover { background:rgba(255,255,255,0.2); color:#fff; }
+.tower-card input[type="checkbox"] { display:none; }
+
+/* ===== ВЫБОР КАРТ ===== */
+.map-select-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+    gap:12px;
+    margin:16px 0;
+}
+.map-card {
+    background:rgba(255,255,255,0.05);
+    border-radius:12px;
+    padding:10px 8px;
+    text-align:center;
+    border:2px solid transparent;
+    cursor:pointer;
+    transition:0.2s;
+}
+.map-card:hover { background:rgba(255,255,255,0.1); transform:translateY(-3px); }
+.map-card.selected {
+    border-color:#ffd700;
+    background:rgba(255,215,0,0.1);
+}
+.map-card .map-preview {
+    height:60px;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    margin-bottom:4px;
+}
+.map-card .map-name {
+    font-weight:bold;
+    font-size:14px;
+    display:block;
+}
+.map-card input[type="radio"] { display:none; }
+
+#gameContainer { display:none; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:1000px; padding:8px; }
+.ui-panel {
+    background:linear-gradient(135deg,#1a1a2e,#16213e); padding:10px 16px; border-radius:10px;
+    box-shadow:0 4px 15px rgba(0,255,255,0.3);
+    display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; width:100%; gap:8px;
+}
+.stats { display:flex; gap:12px; font-size:1rem; font-weight:bold; color:#00ff88; flex-wrap:wrap; }
+.controls { display:flex; gap:8px; }
+.btn {
+    background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none;
+    padding:10px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem; font-weight:bold;
+    transition:0.3s; touch-action:manipulation; min-height:44px; min-width:44px;
+}
+.btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 4px 12px rgba(102,126,234,0.6); }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+.game-layout { display:flex; gap:12px; align-items:flex-start; width:100%; position:relative; }
+.shop-panel {
+    flex:0 0 140px; background:rgba(20,20,40,0.9); border:1px solid #555; border-radius:12px;
+    padding:10px 12px; backdrop-filter:blur(4px); text-align:center;
+}
+.shop-title { font-size:0.9rem; color:#ffd700; margin-bottom:6px; border-bottom:1px solid #444; padding-bottom:6px; }
+.shop-items { display:flex; flex-direction:column; gap:6px; }
+.shop-item {
+    background:#2a2a4a; padding:6px 8px; border-radius:6px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; transition:0.2s;
+    border:2px solid transparent; touch-action:manipulation; min-height:44px;
+}
+.shop-item:hover { background:#3a3a5a; }
+.shop-item.active { border-color:#ffd700; background:#3a3a5a; box-shadow:0 0 15px rgba(255,215,0,0.3); }
+.shop-item span { font-weight:bold; font-size:0.85rem; }
+.shop-item small { color:#aaa; font-size:0.7rem; }
+.shop-hint { margin-top:6px; font-size:0.7rem; color:#888; }
+
+.canvas-wrapper { position:relative; flex:1; touch-action:none; }
+#gameCanvas {
+    border:3px solid #00ffff; border-radius:8px; box-shadow:0 0 30px rgba(0,255,255,0.5);
+    background:#0a0a0a; cursor:crosshair; display:block; width:100%; height:auto; touch-action:none;
+}
+#towerPanel {
+    position:absolute; top:12px; right:12px;
+    background:rgba(20,20,40,0.95); border:2px solid #6a6a9a; border-radius:12px;
+    padding:14px 16px; min-width:160px; backdrop-filter:blur(4px);
+    box-shadow:0 8px 32px rgba(0,0,0,0.8); z-index:10; display:none; font-size:0.85rem;
+}
+#towerPanel h3 { font-size:1.1rem; color:#ffd700; text-align:center; border-bottom:1px solid #444; padding-bottom:6px; margin-bottom:8px; }
+.tower-info p { margin:4px 0; font-size:0.8rem; display:flex; justify-content:space-between; }
+.tower-info span { color:#aac; font-weight:bold; }
+#upgradeBtn { width:100%; margin-top:10px; background:#8a6a2a; border:1px solid #ffd700; font-size:0.8rem; padding:8px; min-height:40px; }
+#upgradeBtn:disabled { background:#4a4a4a; border-color:#666; color:#888; }
+
+@media (max-width:768px) {
+    .menu-box { padding:20px; }
+    .menu-box h1 { font-size:2rem; }
+    .menu-box h2 { font-size:1.5rem; }
+    .big-btn { padding:12px 30px; font-size:1.2rem; }
+    .game-layout { flex-direction:column; align-items:stretch; gap:8px; }
+    .shop-panel { flex:unset; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; padding:8px 12px; }
+    .shop-title { display:none; }
+    .shop-items { flex-direction:row; gap:6px; flex-wrap:wrap; justify-content:center; }
+    .shop-item { flex-direction:row; gap:6px; padding:6px 12px; min-height:40px; font-size:0.8rem; }
+    .shop-item span { font-size:0.8rem; }
+    .shop-item small { font-size:0.7rem; }
+    .shop-hint { font-size:0.7rem; margin-top:4px; width:100%; text-align:center; }
+    #towerPanel { top:8px; right:8px; left:8px; min-width:unset; padding:10px 12px; font-size:0.8rem; }
+    #towerPanel h3 { font-size:1rem; }
+    .tower-info p { font-size:0.75rem; }
+    #upgradeBtn { font-size:0.75rem; padding:6px; min-height:36px; }
+    .ui-panel { padding:8px 12px; gap:6px; }
+    .stats { font-size:0.85rem; gap:8px; }
+    .btn { padding:6px 12px; font-size:0.8rem; min-height:36px; min-width:36px; }
+    .tower-select-grid { grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); }
+    .map-select-grid { grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); }
+}
+@media (max-width:480px) {
+    .tower-card .tower-icon { font-size:36px; }
+    .tower-card .tower-name { font-size:15px; }
+    .tower-card .tower-cost { font-size:13px; }
+    .map-card .map-preview { height:50px; font-size:20px; }
+    .map-card .map-name { font-size:12px; }
+}

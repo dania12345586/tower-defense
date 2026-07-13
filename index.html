@@ -148,6 +148,39 @@
                 <button id="adminSetSpeed" class="btn">Установить</button>
                 <button id="adminClearAll" class="btn" style="background:#e74c3c;">🧹 Очистить всё</button>
             </div>
+
+            <!-- НОВЫЙ БЛОК СПАВНА ВРАГОВ -->
+            <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
+                <h4 style="color:#ffd700; margin:5px 0;">🧟 Спавн врага</h4>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                    <label>Тип:
+                        <select id="adminSpawnType" style="background:#222; color:#fff; border:1px solid #555; border-radius:4px; padding:4px;">
+                            <option value="normal">normal</option>
+                            <option value="fast">fast</option>
+                            <option value="armored">armored</option>
+                            <option value="healer">healer</option>
+                            <option value="sniper">sniper</option>
+                            <option value="tank">tank</option>
+                            <option value="swift">swift</option>
+                            <option value="giant">giant</option>
+                            <option value="shielder">shielder</option>
+                            <option value="assassin">assassin</option>
+                            <option value="mini_boss">mini_boss</option>
+                            <option value="elite_boss">elite_boss</option>
+                            <option value="boss">boss</option>
+                            <option value="berserker">berserker</option>
+                            <option value="plague">plague</option>
+                            <option value="megaboss">megaboss</option>
+                        </select>
+                    </label>
+                    <label>HP: <input type="number" id="adminSpawnHp" value="" style="width:60px;" placeholder="по умолч."></label>
+                    <label>Скорость: <input type="number" id="adminSpawnSpeed" value="" style="width:60px;" placeholder="по умолч."></label>
+                    <label>Награда: <input type="number" id="adminSpawnReward" value="" style="width:60px;" placeholder="по умолч."></label>
+                    <label>Урон базе: <input type="number" id="adminSpawnDamage" value="" style="width:60px;" placeholder="по умолч."></label>
+                    <button id="adminSpawnBtn" class="btn" style="background:#2ecc71;">Создать</button>
+                    <button id="adminSpawnMultipleBtn" class="btn" style="background:#3498db;">Создать 5</button>
+                </div>
+            </div>
         </div>
 
         <div class="game-layout">

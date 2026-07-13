@@ -2,7 +2,7 @@ export const TOWER_TYPES = {
     pistol: {
         range: 170,
         damage: 15,
-        fireRate: 1.0,
+        fireRate: 1.25,   // было 1.0
         cost: 60,
         upgradeCost: 110,
         color: '#4444ff',
@@ -17,7 +17,7 @@ export const TOWER_TYPES = {
         damage: 0,
         fireRate: 0.12,
         cost: 200,
-        upgradeCost: 250, // увеличена стоимость прокачки (было 190)
+        upgradeCost: 250,
         color: '#ff6600',
         maxLevel: 5,
         burnDamagePerSec: 10,
@@ -47,7 +47,7 @@ export const TOWER_TYPES = {
         damage: 12,
         fireRate: 0.75,
         cost: 95,
-        upgradeCost: 180, // чуть увеличена (было 150)
+        upgradeCost: 180,
         color: '#00ccff',
         maxLevel: 4,
         burnDamagePerSec: 0,
@@ -64,5 +64,5 @@ export const TOWER_TYPES = {
     }
 };
 
-export const UPGRADE_COST_MULTIPLIER = 1.5; // увеличен для всех башен (было 1.4)
+export const UPGRADE_COST_MULTIPLIER = 1.5;
 export const MAX_TOWER_LEVEL = 5;

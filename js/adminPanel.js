@@ -11,7 +11,6 @@ export function initAdminPanel() {
         return;
     }
 
-    // ---- КНОПКА ПОКАЗА/СКРЫТИЯ ----
     toggleBtn.addEventListener('click', () => {
         console.log('🔘 Кнопка админки нажата');
         const isHidden = panel.style.display === 'none';
@@ -19,7 +18,6 @@ export function initAdminPanel() {
         toggleBtn.textContent = isHidden ? 'Скрыть админку' : 'Админ-панель';
     });
 
-    // ---- СТАРЫЕ ОБРАБОТЧИКИ ----
     document.getElementById('adminAddGold').addEventListener('click', () => {
         const amount = parseInt(document.getElementById('adminGoldAmount').value) || 100;
         if (window.game) {
@@ -97,7 +95,6 @@ export function initAdminPanel() {
         }
     });
 
-    // ---- НОВЫЙ БЛОК: СПАВН ВРАГОВ ----
     document.getElementById('adminSpawnBtn').addEventListener('click', () => {
         spawnEnemy(1);
     });
@@ -134,6 +131,5 @@ export function initAdminPanel() {
         console.log(`🧟 Создано ${count} врагов типа ${type}`);
     }
 
-    // Панель по умолчанию скрыта
     panel.style.display = 'none';
 }

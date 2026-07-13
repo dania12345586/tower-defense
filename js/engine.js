@@ -49,6 +49,9 @@ export class GameEngine {
         this.maxDjTowers = 1;
         this.shockerCount = 0;
         this.maxShockers = 3;
+        // ===== НОВЫЙ ЛИМИТ ДЛЯ ПИСТОЛЕТЧИКА =====
+        this.pistolCount = 0;
+        this.maxPistols = 4;
 
         this.currentPathIndex = 0;
         this.gameEnded = false;
@@ -215,7 +218,7 @@ export class GameEngine {
             });
         }
 
-        // АДМИН-ПАНЕЛЬ: обработчик клика
+        // АДМИН-ПАНЕЛЬ: обработчик клика (но показ/скрытие будет в startGame)
         this.toggleAdminBtn.addEventListener('click', () => {
             const panel = document.getElementById('adminPanel');
             if (panel.style.display === 'none') {
@@ -260,7 +263,16 @@ export class GameEngine {
         this.userId = window._userId;
         this.username = window._username;
 
-        // Загружаем ТОЛЬКО монеты и разблокированные башни (НЕ золото и НЕ волны)
+        // ===== ПОКАЗЫВАЕМ АДМИНКУ ТОЛЬКО ДЛЯ "данечка" =====
+        if (this.username === 'данечка') {
+            this.toggleAdminBtn.style.display = 'inline-block';
+        } else {
+            this.toggleAdminBtn.style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
+            this.toggleAdminBtn.textContent = 'Админ-панель';
+        }
+
+        // Загружаем монеты и разблокировки
         if (this.userId) {
             try {
                 const progress = await loadProgress(this.userId);
@@ -289,20 +301,11 @@ export class GameEngine {
         // Все башни доступны
         this.selectedTowers = ['pistol', 'flame', 'dj', 'electric'];
 
-        // Админ-панель видна только "данечка"
-        if (this.username === 'данечка') {
-            this.toggleAdminBtn.style.display = 'inline-block';
-        } else {
-            this.toggleAdminBtn.style.display = 'none';
-            // Скрываем админ-панель, если она была открыта
-            document.getElementById('adminPanel').style.display = 'none';
-            this.toggleAdminBtn.textContent = 'Админ-панель';
-        }
-
         this.map = new GameMap(this.canvas.width, this.canvas.height, 40, this.selectedMap);
         this.flameTowerCount = 0;
         this.djTowerCount = 0;
         this.shockerCount = 0;
+        this.pistolCount = 0; // сброс счётчика
         this.currentPathIndex = 0;
         this.gameEnded = false;
         this.waveInProgress = false;
@@ -532,7 +535,13 @@ export class GameEngine {
                     const { x: tx, y: ty } = this.map.gridToPixel(gridX, gridY);
                     let tower;
                     if (this.selectedTowerType === 'pistol') {
+                        // ===== ПРОВЕРКА ЛИМИТА =====
+                        if (this.pistolCount >= this.maxPistols) {
+                            this.shopHint.textContent = 'Достигнут лимит пистолетчиков (4)!';
+                            return;
+                        }
                         tower = new Tower(tx, ty, 'pistol');
+                        this.pistolCount++;
                     } else if (this.selectedTowerType === 'flame') {
                         if (this.flameTowerCount >= this.maxFlameTowers) {
                             this.shopHint.textContent = 'Достигнут лимит огнемётов (2)!';
@@ -624,6 +633,12 @@ export class GameEngine {
             const key = `${tower.gridX},${tower.gridY}`;
             this.map.occupiedCells.delete(key);
         }
+        // ===== УМЕНЬШАЕМ СЧЁТЧИК ПРИ ПРОДАЖЕ =====
+        if (tower.type === 'pistol') this.pistolCount--;
+        else if (tower.type === 'flame') this.flameTowerCount--;
+        else if (tower.type === 'dj') this.djTowerCount--;
+        else if (tower.type === 'electric') this.shockerCount--;
+
         this.gold += price;
         if (this.selectedTower === tower) {
             this.clearSelection();
@@ -707,12 +722,10 @@ export class GameEngine {
             this.gameEnded = true;
             this.stopMusic();
 
-            // Начисляем монеты за карту
             const reward = this.coinRewards[this.selectedMap] || 0;
             this.coins += reward;
             console.log(`Начислено монет: ${reward} за карту ${this.selectedMap}`);
 
-            // Сохраняем монеты в базу
             await this.saveCoins();
 
             this.showMenuButton();
@@ -731,7 +744,6 @@ export class GameEngine {
         }, 1500);
     }
 
-    // Сохраняем ТОЛЬКО монеты и разблокированные башни (без прогресса катки)
     async saveCoins() {
         if (!this.userId) {
             console.warn('Нет userId, сохранение невозможно');
@@ -772,7 +784,7 @@ export class GameEngine {
         menuBtn.style.boxShadow = '0 0 40px rgba(102, 126, 234, 0.6)';
         menuBtn.addEventListener('click', async () => {
             this.stopMusic();
-            await this.saveCoins(); // сохраняем монеты перед выходом
+            await this.saveCoins();
             location.reload();
         });
         document.body.appendChild(menuBtn);

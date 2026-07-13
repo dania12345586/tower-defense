@@ -60,9 +60,21 @@ export class GameEngine {
         this.userId = null;
         this.username = null;
 
+        // Награды за карты (в монетах)
+        this.coinRewards = {
+            'default': 25,
+            'forest': 25,
+            'lunar': 30,
+            'snow': 50,
+            'mushroom': 75,
+            'volcano': 150
+        };
+
         this.goldEl = document.getElementById('gold');
         this.livesEl = document.getElementById('lives');
         this.waveEl = document.getElementById('wave');
+        this.coinsGameEl = document.getElementById('coinsGame');
+        this.coinsDisplayEl = document.getElementById('coinsDisplay');
         this.speedBtn = document.getElementById('speedBtn');
         this.towerPanel = document.getElementById('towerPanel');
         this.towerInfo = document.getElementById('towerInfo');
@@ -205,6 +217,18 @@ export class GameEngine {
             });
         }
 
+        // Админ-панель – обработчик клика
+        this.toggleAdminBtn.addEventListener('click', () => {
+            const panel = document.getElementById('adminPanel');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                this.toggleAdminBtn.textContent = 'Скрыть админку';
+            } else {
+                panel.style.display = 'none';
+                this.toggleAdminBtn.textContent = 'Админ-панель';
+            }
+        });
+
         this.canvas.addEventListener('click', (e) => {
             const pos = this.getPointerPos(e);
             this.handleClick(pos.x, pos.y);
@@ -255,9 +279,10 @@ export class GameEngine {
             }
         }
 
-        // ===== ВСЕ БАШНИ ДОСТУПНЫ =====
+        // Все башни доступны
         this.selectedTowers = ['pistol', 'flame', 'dj', 'electric'];
 
+        // Админ-панель видна только "данечка"
         if (this.username === 'данечка') {
             this.toggleAdminBtn.style.display = 'inline-block';
         } else {
@@ -280,6 +305,12 @@ export class GameEngine {
         this.victory = false;
         this.isFirstWave = true;
         this.menuButtonCreated = false;
+
+        // Фикс: золото должно быть 120, а не 167
+        // Убедимся, что gold = 120 (если прогресс не перезаписал)
+        if (!this.userId) {
+            this.gold = 120;
+        }
 
         if (this.startWaveBtn) {
             this.startWaveBtn.style.display = 'inline-block';
@@ -440,6 +471,8 @@ export class GameEngine {
         this.goldEl.textContent = `💰 Gold: ${this.gold}`;
         this.livesEl.textContent = `❤️ Lives: ${this.lives}`;
         this.waveEl.textContent = `🌊 Wave: ${this.wave}`;
+        if (this.coinsGameEl) this.coinsGameEl.textContent = `🪙 ${this.coins}`;
+        if (this.coinsDisplayEl) this.coinsDisplayEl.textContent = this.coins;
 
         if (this.startWaveBtn) {
             if (this.isFirstWave && !this.waveInProgress && !this.gameOver && !this.victory) {
@@ -672,15 +705,21 @@ export class GameEngine {
 
         console.log(`Волна ${this.waveIndex} из ${WAVES.length} завершена. Текущая волна: ${this.wave}`);
 
-        await this.saveGameProgress();
-
+        // Проверяем, завершена ли последняя волна (победа)
         if (this.waveIndex >= WAVES.length) {
             console.log('Все волны пройдены! Победа!');
             this.victory = true;
             this.gameEnded = true;
             this.stopMusic();
-            this.showMenuButton();
+
+            // Начисляем монеты за карту
+            const reward = this.coinRewards[this.selectedMap] || 0;
+            this.coins += reward;
+            console.log(`Начислено монет: ${reward} за карту ${this.selectedMap}`);
+
             await this.saveGameProgress();
+            this.showMenuButton();
+            this.updateUI();
             return;
         }
 

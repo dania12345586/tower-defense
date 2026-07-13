@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- ЭКРАН АВТОРИЗАЦИИ (только имя + пароль) -->
+    <!-- ЭКРАН АВТОРИЗАЦИИ -->
     <div id="authScreen" class="menu-overlay">
         <div class="menu-box">
             <h2>🏰 Tower Defense</h2>
@@ -23,11 +23,16 @@
         </div>
     </div>
 
-    <!-- ГЛАВНОЕ МЕНЮ (скрыто до авторизации) -->
+    <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="menu-overlay" style="display: none;">
         <div class="menu-box">
             <h1>🏰 Tower Defense</h1>
-            <button id="startGameBtn" class="btn big-btn">▶ Играть</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
+                <button id="startGameBtn" class="btn big-btn">▶ Играть</button>
+                <div style="font-size: 18px; color: #ffd700; background: rgba(0,0,0,0.3); padding: 6px 16px; border-radius: 8px;">
+                    🪙 <span id="coinsDisplay">0</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -74,31 +79,37 @@
                     <input type="radio" name="map" value="default" checked>
                     <div class="map-preview" style="background:#2a2a4a;">🏙️ Город</div>
                     <span class="map-name">Город</span>
+                    <span style="font-size:12px;color:#aaa;">Награда: 25🪙</span>
                 </label>
                 <label class="map-card" data-map="forest">
                     <input type="radio" name="map" value="forest">
                     <div class="map-preview" style="background:#1a3a1a;">🌲 Лес</div>
                     <span class="map-name">Лес</span>
+                    <span style="font-size:12px;color:#aaa;">Награда: 25🪙</span>
                 </label>
                 <label class="map-card" data-map="lunar">
                     <input type="radio" name="map" value="lunar">
                     <div class="map-preview" style="background:#1a1a2e;">🌙 Лунная база</div>
                     <span class="map-name">Лунная база</span>
+                    <span style="font-size:12px;color:#aaa;">Награда: 30🪙</span>
                 </label>
                 <label class="map-card" data-map="snow">
                     <input type="radio" name="map" value="snow">
                     <div class="map-preview" style="background:#b0c4de;">❄️ Снежный перевал</div>
                     <span class="map-name">Снежный перевал</span>
+                    <span style="font-size:12px;color:#aaa;">Награда: 50🪙</span>
                 </label>
                 <label class="map-card" data-map="mushroom">
                     <input type="radio" name="map" value="mushroom">
                     <div class="map-preview" style="background:#2d5a2d;">🍄 Грибной лес</div>
                     <span class="map-name">Грибной лес</span>
+                    <span style="font-size:12px;color:#aaa;">Награда: 75🪙</span>
                 </label>
                 <label class="map-card" data-map="volcano">
                     <input type="radio" name="map" value="volcano">
                     <div class="map-preview" style="background:#1a0a0a;">🌋 Адский вулкан</div>
                     <span class="map-name">Адский вулкан</span>
+                    <span style="font-size:12px;color:#aaa;">Награда: 150🪙</span>
                 </label>
             </div>
             <button id="mapSelectPlayBtn" class="btn big-btn">▶ Играть!</button>
@@ -112,6 +123,7 @@
                 <span id="gold">💰 Gold: 120</span>
                 <span id="lives">❤️ Lives: 20</span>
                 <span id="wave">🌊 Wave: 1</span>
+                <span id="coinsGame" style="color:#ffd700;">🪙 0</span>
             </div>
             <div class="controls">
                 <button id="startWave" class="btn">Start Wave</button>
@@ -120,7 +132,7 @@
             </div>
         </div>
 
-        <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
+        <!-- АДМИН-ПАНЕЛЬ -->
         <div id="adminPanel" style="display:none; background: #1a1a2e; border: 2px solid #e67e22; border-radius: 12px; padding: 15px; margin: 10px 0; width: 100%; max-width: 800px;">
             <h3 style="color:#e67e22; margin:0 0 10px 0;">🛠️ Админ-панель</h3>
             <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">

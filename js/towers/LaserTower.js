@@ -84,13 +84,12 @@ export class LaserTower extends Tower {
     upgrade() {
         if (this.level >= this.maxLevel) return;
         this.level++;
-        // ----- НОВЫЙ МЯГКИЙ АПГРЕЙД -----
-        this.baseDamage += 0.5;           // +0.5 урона за уровень
-        this.chargeRate += 1;             // +1 к скорости зарядки
-        this.maxCharge += 3;              // +3 к максимуму заряда
-        // Радиус растёт медленно
-        this.range = Math.floor(this.range * 1.05);
-        // Скорость атаки не меняется (остаётся 0.22)
+        // ----- МИКРО-АПГРЕЙДЫ (почти незаметные) -----
+        this.baseDamage += 0.2;           // +0.2 урона за уровень
+        this.chargeRate += 0.3;           // +0.3 к скорости зарядки
+        this.maxCharge += 1;              // +1 к максимуму заряда
+        this.range = Math.floor(this.range * 1.015); // +1.5% радиуса
+        // Скорость атаки НЕ МЕНЯЕТСЯ
         this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
         // Обновляем текущий урон (без баффов)

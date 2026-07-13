@@ -61,11 +61,11 @@ export class LaserTower extends Tower {
     constructor(x, y) {
         super(x, y, 'laser');
         this.color = '#ff44ff';
-        // Базовые статы
+        // Базовые статы (из конфига)
         this.baseDamage = 4;
         this.chargeRate = 2;
         this.maxCharge = 15;
-        this.fireRate = 0.22;
+        this.fireRate = 0.22; // НЕ ИСПОЛЬЗУЕТСЯ ДЛЯ СТРЕЛЬБЫ (но оставлен для совместимости)
         this.range = 220;
         this.cost = 1000;
         this.upgradeCost = 700;
@@ -79,16 +79,18 @@ export class LaserTower extends Tower {
         this.totalDamage = 0;
         this.shootFlash = 0;
         this.particles = [];
-        this.cooldown = 0; // кулдаун
+        // КУЛДАУН УБРАН – АТАКУЕМ КАЖДЫЙ КАДР
     }
 
     upgrade() {
         if (this.level >= this.maxLevel) return;
         this.level++;
+        // Микро-апгрейды
         this.baseDamage += 0.2;
         this.chargeRate += 0.3;
         this.maxCharge += 1;
         this.range = Math.floor(this.range * 1.015);
+        // Скорость атаки не меняется
         this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
         this.damage = this.baseDamage;
@@ -99,12 +101,6 @@ export class LaserTower extends Tower {
     }
 
     update(enemies, bullets, deltaTime) {
-        // Обработка кулдауна
-        if (this.cooldown > 0) {
-            this.cooldown -= deltaTime;
-        }
-
-        // Обработка стана
         if (this.stunnedUntil > 0) {
             this.stunnedUntil -= deltaTime;
             return;
@@ -126,26 +122,26 @@ export class LaserTower extends Tower {
             }
         }
 
-        // Зарядка
+        // АТАКА КАЖДЫЙ КАДР (без кулдауна)
         if (this.target) {
+            // Зарядка
             this.chargeTimer += deltaTime;
             if (this.chargeTimer >= 0.1) {
                 const chargeAdd = this.chargeRate * 0.1;
                 this.charge = Math.min(this.maxCharge, this.charge + chargeAdd);
                 this.chargeTimer = 0;
             }
-        }
 
-        // Стрельба (только если кулдаун <= 0)
-        if (this.target && this.cooldown <= 0) {
+            // Текущий урон
             let currentDamage = this.baseDamage + this.charge;
             if (this.isBuffed) {
                 currentDamage = Math.floor(currentDamage * this.buffDamageMult);
             }
+
+            // Создаём луч (каждый кадр)
             const beam = new LaserBeam(this.x, this.y, this.target, currentDamage, this);
             bullets.push(beam);
             this.shootFlash = 0.05;
-            this.cooldown = this.fireRate; // сбрасываем кулдаун
         }
 
         if (this.particles) {

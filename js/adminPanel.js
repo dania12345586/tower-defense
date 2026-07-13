@@ -1,27 +1,41 @@
-import { ENEMY_TYPES } from './configs/waveConfig.js';
 import { createEnemy } from './enemy.js';
 
 export function initAdminPanel() {
+    console.log('✅ initAdminPanel вызвана');
+
     const panel = document.getElementById('adminPanel');
     const toggleBtn = document.getElementById('toggleAdminPanel');
 
-    // ---- СТАРЫЕ ОБРАБОТЧИКИ ----
+    if (!panel || !toggleBtn) {
+        console.error('❌ Элементы админ-панели не найдены!');
+        return;
+    }
+
+    // ---- КНОПКА ПОКАЗА/СКРЫТИЯ ----
     toggleBtn.addEventListener('click', () => {
+        console.log('🔘 Кнопка админки нажата');
         const isHidden = panel.style.display === 'none';
         panel.style.display = isHidden ? 'block' : 'none';
         toggleBtn.textContent = isHidden ? 'Скрыть админку' : 'Админ-панель';
     });
 
+    // ---- СТАРЫЕ ОБРАБОТЧИКИ ----
     document.getElementById('adminAddGold').addEventListener('click', () => {
         const amount = parseInt(document.getElementById('adminGoldAmount').value) || 100;
-        if (window.game) window.game.gold += amount;
-        if (window.game) window.game.updateUI();
+        if (window.game) {
+            window.game.gold += amount;
+            window.game.updateUI();
+            console.log(`➕ Добавлено ${amount} золота`);
+        }
     });
 
     document.getElementById('adminAddLives').addEventListener('click', () => {
         const amount = parseInt(document.getElementById('adminLivesAmount').value) || 5;
-        if (window.game) window.game.lives += amount;
-        if (window.game) window.game.updateUI();
+        if (window.game) {
+            window.game.lives += amount;
+            window.game.updateUI();
+            console.log(`❤️ Добавлено ${amount} жизней`);
+        }
     });
 
     document.getElementById('adminKillEnemies').addEventListener('click', () => {
@@ -30,6 +44,7 @@ export function initAdminPanel() {
                 e.hp = 0;
                 e.isDead = true;
             }
+            console.log('💀 Все враги убиты');
         }
     });
 
@@ -39,11 +54,15 @@ export function initAdminPanel() {
             window.game.waveIndex = wave - 1;
             window.game.wave = wave;
             window.game.updateUI();
+            console.log(`🌊 Установлена волна ${wave}`);
         }
     });
 
     document.getElementById('adminStartWave').addEventListener('click', () => {
-        if (window.game) window.game.startWave();
+        if (window.game) {
+            window.game.startWave();
+            console.log('▶️ Старт волны');
+        }
     });
 
     document.getElementById('adminFinishWave').addEventListener('click', () => {
@@ -55,6 +74,7 @@ export function initAdminPanel() {
             window.game.enemies = [];
             window.game.waveInProgress = false;
             window.game.endWave();
+            console.log('🏁 Волна завершена принудительно');
         }
     });
 
@@ -63,6 +83,7 @@ export function initAdminPanel() {
         if (window.game) {
             window.game.timeScale = speed;
             window.game.speedBtn.textContent = `Скорость: ${speed}x`;
+            console.log(`⚡ Скорость установлена: ${speed}x`);
         }
     });
 
@@ -72,10 +93,11 @@ export function initAdminPanel() {
             window.game.enemies = [];
             window.game.bullets = [];
             if (window.game.map) window.game.map.occupiedCells = new Set();
+            console.log('🧹 Всё очищено');
         }
     });
 
-    // ---- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ СПАВНА ----
+    // ---- НОВЫЙ БЛОК: СПАВН ВРАГОВ ----
     document.getElementById('adminSpawnBtn').addEventListener('click', () => {
         spawnEnemy(1);
     });
@@ -84,7 +106,10 @@ export function initAdminPanel() {
     });
 
     function spawnEnemy(count = 1) {
-        if (!window.game) return;
+        if (!window.game) {
+            console.warn('⚠️ Игра не создана');
+            return;
+        }
         const type = document.getElementById('adminSpawnType').value;
         const hpInput = document.getElementById('adminSpawnHp').value;
         const speedInput = document.getElementById('adminSpawnSpeed').value;
@@ -92,7 +117,10 @@ export function initAdminPanel() {
         const damageInput = document.getElementById('adminSpawnDamage').value;
 
         const path = window.game.map.paths[0];
-        if (!path) return;
+        if (!path) {
+            console.warn('⚠️ Нет пути для спавна');
+            return;
+        }
 
         for (let i = 0; i < count; i++) {
             const enemy = createEnemy(path, type);
@@ -103,6 +131,7 @@ export function initAdminPanel() {
             enemy.maxHp = enemy.hp;
             window.game.enemies.push(enemy);
         }
+        console.log(`🧟 Создано ${count} врагов типа ${type}`);
     }
 
     // Панель по умолчанию скрыта

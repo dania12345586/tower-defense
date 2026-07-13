@@ -43,18 +43,31 @@
                 <div style="margin-top:12px; font-size:0.8rem; color:#aaa;">Выберите башни слева</div>
             </div>
 
-            <!-- Правая колонка: МАГАЗИН -->
+            <!-- Правая колонка: кнопка "Магазин" -->
             <div class="menu-column menu-column-right">
                 <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🛒 Магазин</h2>
-                <div id="shopItemsContainer" style="width:100%; display:flex; flex-direction:column; gap:8px;">
-                    <!-- Сюда будут вставляться товары -->
-                </div>
+                <button id="shopBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">Открыть магазин</button>
                 <div style="margin-top:12px; font-size:0.8rem; color:#888;">Покупайте новые башни за монеты</div>
             </div>
         </div>
     </div>
 
-    <!-- МОДАЛКА ВЫБОРА БАШЕН (без чекбоксов) -->
+    <!-- МОДАЛКА МАГАЗИНА -->
+    <div id="shopModal" class="menu-overlay" style="display: none; z-index: 300;">
+        <div class="menu-box" style="max-width: 500px;">
+            <h2 style="color:#ffd700;">🛒 Магазин</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <span style="font-size:1.2rem;">Ваши монеты:</span>
+                <span style="font-size:1.5rem; color:#ffd700;">🪙 <span id="shopCoinsDisplay">0</span></span>
+            </div>
+            <div id="shopItemsContainer" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Товары -->
+            </div>
+            <button id="closeShopBtn" class="btn" style="margin-top:20px; background:#e74c3c;">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ВЫБОРА БАШЕН -->
     <div id="towerSelectModal" class="menu-overlay" style="display: none; z-index: 200;">
         <div class="menu-box" style="max-width: 600px;">
             <h2>Выберите башни (макс. 4)</h2>
@@ -172,7 +185,7 @@
                 <button id="adminClearAll" class="btn" style="background:#e74c3c;">🧹 Очистить всё</button>
             </div>
 
-            <!-- БЛОК СПАВНА ВРАГОВ -->
+            <!-- БЛОК СПАВНА -->
             <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
                 <h4 style="color:#ffd700; margin:5px 0;">🧟 Спавн врага</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
@@ -206,7 +219,7 @@
                 </div>
             </div>
 
-            <!-- БЛОК РЕДАКТОРА СТАТОВ БАШНИ -->
+            <!-- РЕДАКТОР БАШЕН -->
             <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
                 <h4 style="color:#ffd700; margin:5px 0;">⚙️ Редактор башни</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">

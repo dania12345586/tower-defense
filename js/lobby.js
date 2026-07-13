@@ -3,16 +3,15 @@ import {
     voteMap, getVotes, subscribeToVotes, startGame, subscribeToRoom, unsubscribeFromRoom
 } from './multiplayer.js';
 import { getCurrentUser } from './auth.js';
+import { supabase } from './supabaseClient.js';
 
-// --- Глобальные переменные ---
 let currentRoomId = null;
 let currentUserId = null;
 let isHost = false;
 let roomData = null;
 let votesChannel = null;
-let selectedTowers = ['pistol', 'flame', 'dj']; // временно для лобби
+let selectedTowers = ['pistol', 'flame', 'dj']; // временно
 
-// --- Рендер списка комнат ---
 export async function renderRoomList() {
     const container = document.getElementById('roomListContainer');
     if (!container) return;
@@ -30,7 +29,6 @@ export async function renderRoomList() {
             `;
             container.appendChild(div);
         });
-        // Вешаем обработчики
         document.querySelectorAll('.join-room-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const roomId = btn.dataset.roomid;
@@ -39,10 +37,10 @@ export async function renderRoomList() {
         });
     } catch (e) {
         console.error('Ошибка загрузки комнат:', e);
+        container.innerHTML = '<p style="color:red;">Ошибка загрузки комнат: ' + e.message + '</p>';
     }
 }
 
-// --- Присоединение к комнате ---
 async function joinRoomHandler(roomId) {
     try {
         const user = getCurrentUser();
@@ -57,7 +55,6 @@ async function joinRoomHandler(roomId) {
     }
 }
 
-// --- Создание комнаты ---
 export async function createRoomHandler() {
     try {
         const user = getCurrentUser();
@@ -73,7 +70,6 @@ export async function createRoomHandler() {
     }
 }
 
-// --- Открыть лобби ---
 async function openLobby(room) {
     document.getElementById('roomListModal').style.display = 'none';
     document.getElementById('lobbyModal').style.display = 'flex';
@@ -89,7 +85,6 @@ async function openLobby(room) {
     });
 }
 
-// --- Рендер лобби ---
 function renderLobby(room) {
     const container = document.getElementById('lobbyContent');
     if (!container) return;
@@ -117,7 +112,6 @@ function renderLobby(room) {
     });
     html += `</div>`;
 
-    // Выбор башен
     html += `
         <div style="margin-bottom:16px;">
             <h4>Выберите башни (макс. 4)</h4>
@@ -132,7 +126,6 @@ function renderLobby(room) {
         </div>
     `;
 
-    // Голосование за карту
     if (room.status === 'waiting') {
         html += `
             <div style="margin-bottom:16px;">
@@ -161,12 +154,11 @@ function renderLobby(room) {
 
     container.innerHTML = html;
 
-    // Обработчики
     document.querySelectorAll('.lobby-tower-checkbox').forEach(cb => {
         cb.addEventListener('change', () => {
             const checked = document.querySelectorAll('.lobby-tower-checkbox:checked');
-            selectedTowers = Array.from(checked).map(c => c.value);
-            window._selectedTowers = selectedTowers;
+            window._selectedTowers = Array.from(checked).map(c => c.value);
+            selectedTowers = window._selectedTowers;
         });
     });
 

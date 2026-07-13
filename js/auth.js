@@ -1,8 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-const supabaseUrl = 'https://rrqtouhbhpzxpqfuldlv.supabase.co';
-const supabaseKey = 'sb_publishable__0FWveft58VYiS35xKbxxw_EXAlrLwX';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from './supabaseClient.js';
 
 async function hashPassword(password) {
     const encoder = new TextEncoder();
@@ -31,7 +27,6 @@ export async function register(username, password) {
     const passwordHash = await hashPassword(password);
     console.log('Хэш пароля:', passwordHash);
 
-    // ===== ИЗМЕНЕНИЕ: убираем electric из начального списка =====
     const defaultTowers = ['pistol', 'flame', 'dj'];
 
     const { data, error } = await supabase

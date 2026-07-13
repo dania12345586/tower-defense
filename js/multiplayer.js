@@ -1,15 +1,10 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { supabase } from './supabaseClient.js';
 import { getCurrentUser } from './auth.js';
-
-const supabaseUrl = 'https://rrqtouhbhpzxpqfuldlv.supabase.co';
-const supabaseKey = 'sb_publishable__0FWveft58VYiS35xKbxxw_EXAlrLwX';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 let currentRoomId = null;
 let currentChannel = null;
 let roomCallbacks = {};
 
-// Подписка на изменения в комнате
 export function subscribeToRoom(roomId, onUpdate) {
     if (currentChannel) {
         supabase.removeChannel(currentChannel);
@@ -29,7 +24,6 @@ export function subscribeToRoom(roomId, onUpdate) {
     return currentChannel;
 }
 
-// Отписаться
 export function unsubscribeFromRoom() {
     if (currentChannel) {
         supabase.removeChannel(currentChannel);
@@ -37,7 +31,6 @@ export function unsubscribeFromRoom() {
     }
 }
 
-// Создать комнату
 export async function createRoom(hostId, map = 'default') {
     const { data, error } = await supabase
         .from('rooms')
@@ -53,7 +46,6 @@ export async function createRoom(hostId, map = 'default') {
     return data;
 }
 
-// Получить список комнат со статусом waiting
 export async function getWaitingRooms() {
     const { data, error } = await supabase
         .from('rooms')
@@ -64,7 +56,6 @@ export async function getWaitingRooms() {
     return data;
 }
 
-// Присоединиться к комнате
 export async function joinRoom(roomId, userId) {
     const { data: room, error: fetchError } = await supabase
         .from('rooms')
@@ -87,7 +78,6 @@ export async function joinRoom(roomId, userId) {
     return data;
 }
 
-// Кикнуть игрока (только хост)
 export async function kickPlayer(roomId, userId, hostId) {
     const { data: room, error: fetchError } = await supabase
         .from('rooms')
@@ -107,7 +97,6 @@ export async function kickPlayer(roomId, userId, hostId) {
     return data;
 }
 
-// Покинуть комнату
 export async function leaveRoom(roomId, userId) {
     const { data: room, error: fetchError } = await supabase
         .from('rooms')
@@ -133,7 +122,6 @@ export async function leaveRoom(roomId, userId) {
     return data;
 }
 
-// Голосование за карту
 export async function voteMap(roomId, playerId, map) {
     await supabase.from('room_votes').delete().eq('room_id', roomId).eq('player_id', playerId);
     const { error } = await supabase
@@ -143,7 +131,6 @@ export async function voteMap(roomId, playerId, map) {
     return true;
 }
 
-// Получить текущие голоса
 export async function getVotes(roomId) {
     const { data, error } = await supabase
         .from('room_votes')
@@ -153,7 +140,6 @@ export async function getVotes(roomId) {
     return data;
 }
 
-// Подписка на голоса (Realtime)
 export function subscribeToVotes(roomId, onVoteUpdate) {
     const channel = supabase
         .channel(`votes:${roomId}`)
@@ -169,7 +155,6 @@ export function subscribeToVotes(roomId, onVoteUpdate) {
     return channel;
 }
 
-// Запустить игру (хост)
 export async function startGame(roomId, hostId) {
     const { data: room, error: fetchError } = await supabase
         .from('rooms')

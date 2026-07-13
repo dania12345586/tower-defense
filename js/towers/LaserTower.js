@@ -61,13 +61,13 @@ export class LaserTower extends Tower {
     constructor(x, y) {
         super(x, y, 'laser');
         this.color = '#ff44ff';
-        // ----- НОВЫЙ БАЛАНС -----
+        // Баланс
         this.baseDamage = 2;
         this.chargeRate = 2;
-        this.maxCharge = 4;           // начальный макс. заряд
+        this.maxCharge = 4;
         this.fireRate = 0.22;
         this.range = 220;
-        this.cost = 1000;             // стоимость установки
+        this.cost = 1000;
         this.upgradeCost = 700;
         // Состояние
         this.charge = 0;
@@ -79,15 +79,14 @@ export class LaserTower extends Tower {
         this.totalDamage = 0;
         this.shootFlash = 0;
         this.particles = [];
+        this._laserSoundTimer = 0;
     }
 
     upgrade() {
         if (this.level >= this.maxLevel) return;
         this.level++;
-        // ----- ОЧЕНЬ СЛАБЫЕ АПГРЕЙДЫ -----
-        // Урон НЕ РАСТЁТ (остаётся 2)
         this.chargeRate += 0.2;
-        this.maxCharge += 0.5;         // +0.5 за уровень → на 5 уровне будет 4 + 0.5*4 = 6
+        this.maxCharge += 0.5;
         this.range = Math.floor(this.range * 1.01);
         this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
@@ -109,6 +108,7 @@ export class LaserTower extends Tower {
                 this.target = null;
                 this.charge = 0;
                 this.chargeTimer = 0;
+                this._laserSoundTimer = 0;
             }
         }
         if (!this.target) {
@@ -116,6 +116,7 @@ export class LaserTower extends Tower {
             if (this.target) {
                 this.charge = 0;
                 this.chargeTimer = 0;
+                this._laserSoundTimer = 0;
             }
         }
 
@@ -135,6 +136,16 @@ export class LaserTower extends Tower {
             const beam = new LaserBeam(this.x, this.y, this.target, currentDamage, this);
             bullets.push(beam);
             this.shootFlash = 0.05;
+
+            // ЗВУК ЛАЗЕРА (не чаще раза в 0.1 секунды)
+            if (window.game && window.game.playSound) {
+                if (this._laserSoundTimer <= 0) {
+                    window.game.playSound('shootLaser');
+                    this._laserSoundTimer = 0.1;
+                } else {
+                    this._laserSoundTimer -= deltaTime;
+                }
+            }
         }
 
         if (this.particles) {

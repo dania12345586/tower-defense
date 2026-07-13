@@ -53,6 +53,51 @@ function renderSelectedTowers() {
     });
 }
 
+// ----- ПРИВЯЗКА ОБРАБОТЧИКОВ НА КАРТОЧКИ (ПРЯМО) -----
+function attachTowerCardHandlers() {
+    const cards = document.querySelectorAll('#towerSelectModal .tower-card');
+    cards.forEach(card => {
+        // Удаляем старые обработчики через клонирование
+        const newCard = card.cloneNode(true);
+        card.parentNode.replaceChild(newCard, card);
+        const cb = newCard.querySelector('.tower-checkbox');
+        
+        // Обработчик клика по карточке
+        newCard.addEventListener('click', function(e) {
+            if (e.target.tagName === 'INPUT') return; // игнорируем клик по скрытому чекбоксу (он невидим)
+            
+            if (cb.checked) {
+                // Снимаем выбор
+                cb.checked = false;
+                this.classList.remove('selected');
+                document.getElementById('towerSelectWarning').textContent = '';
+            } else {
+                // Проверяем лимит
+                const checked = document.querySelectorAll('#towerSelectModal .tower-checkbox:checked');
+                if (checked.length >= MAX_TOWERS) {
+                    document.getElementById('towerSelectWarning').textContent = `❌ Нельзя выбрать больше ${MAX_TOWERS} башен!`;
+                    return;
+                }
+                // Выбираем
+                cb.checked = true;
+                this.classList.add('selected');
+                document.getElementById('towerSelectWarning').textContent = '';
+            }
+        });
+        
+        // Синхронизация при изменении чекбокса (если изменится программно)
+        cb.addEventListener('change', function() {
+            const parent = this.closest('.tower-card');
+            if (this.checked) parent.classList.add('selected');
+            else parent.classList.remove('selected');
+        });
+        
+        // Восстанавливаем состояние
+        if (cb.checked) newCard.classList.add('selected');
+        else newCard.classList.remove('selected');
+    });
+}
+
 // ----- ОТКРЫТИЕ МОДАЛКИ -----
 function openTowerSelectModal() {
     const modal = document.getElementById('towerSelectModal');
@@ -65,6 +110,9 @@ function openTowerSelectModal() {
     tempSelectedTowers = [...selectedTowers];
     document.getElementById('towerSelectWarning').textContent = '';
     modal.style.display = 'flex';
+    
+    // ПРИВЯЗЫВАЕМ ОБРАБОТЧИКИ ЗАНОВО (после отображения)
+    attachTowerCardHandlers();
 }
 
 // ----- ЗАКРЫТИЕ МОДАЛКИ (без сохранения) -----
@@ -88,53 +136,6 @@ function saveTowerSelection() {
     window._selectedTowers = selectedTowers;
     renderSelectedTowers();
     closeTowerSelectModal();
-}
-
-// ----- ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ (делегирование) -----
-function initTowerSelection() {
-    const modal = document.getElementById('towerSelectModal');
-    // Удаляем старые обработчики, если есть (но через делегирование они не мешают)
-    // Вешаем один обработчик на всю модалку
-    modal.addEventListener('click', function(e) {
-        // Находим ближайшую карточку башни
-        const card = e.target.closest('.tower-card');
-        if (!card) return;
-        // Если клик по чекбоксу – игнорируем (он скрыт, но на всякий случай)
-        if (e.target.tagName === 'INPUT') return;
-
-        const cb = card.querySelector('.tower-checkbox');
-        if (!cb) return;
-
-        // Если чекбокс уже выбран – снимаем
-        if (cb.checked) {
-            cb.checked = false;
-            card.classList.remove('selected');
-            document.getElementById('towerSelectWarning').textContent = '';
-            return;
-        }
-
-        // Если не выбран – проверяем лимит
-        const checked = document.querySelectorAll('#towerSelectModal .tower-checkbox:checked');
-        if (checked.length >= MAX_TOWERS) {
-            document.getElementById('towerSelectWarning').textContent = `❌ Нельзя выбрать больше ${MAX_TOWERS} башен!`;
-            return;
-        }
-
-        // Выбираем
-        cb.checked = true;
-        card.classList.add('selected');
-        document.getElementById('towerSelectWarning').textContent = '';
-    });
-
-    // Также нужно синхронизировать состояние при изменении чекбокса (если вдруг изменится через код)
-    modal.addEventListener('change', function(e) {
-        if (e.target.classList.contains('tower-checkbox')) {
-            const card = e.target.closest('.tower-card');
-            if (card) {
-                card.classList.toggle('selected', e.target.checked);
-            }
-        }
-    });
 }
 
 // ----- АВТОРИЗАЦИЯ -----
@@ -224,9 +225,6 @@ document.getElementById('cancelTowerSelectBtn').addEventListener('click', () => 
     document.getElementById('towerSelectWarning').textContent = '';
     closeTowerSelectModal();
 });
-
-// ----- ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ (делегирование) -----
-initTowerSelection();
 
 // ----- ЗАКРЫТИЕ МОДАЛКИ ПО КЛИКУ НА ОВЕРЛЕЙ -----
 document.getElementById('towerSelectModal').addEventListener('click', (e) => {

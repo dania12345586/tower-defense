@@ -43,11 +43,13 @@
                 <div style="margin-top:12px; font-size:0.8rem; color:#aaa;">Выберите башни слева</div>
             </div>
 
-            <!-- Правая колонка -->
+            <!-- Правая колонка: МАГАЗИН -->
             <div class="menu-column menu-column-right">
                 <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🛒 Магазин</h2>
-                <button id="shopBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">В разработке</button>
-                <div style="margin-top:12px; font-size:0.8rem; color:#888;">Скоро здесь будут скины и улучшения</div>
+                <div id="shopItemsContainer" style="width:100%; display:flex; flex-direction:column; gap:8px;">
+                    <!-- Сюда будут вставляться товары -->
+                </div>
+                <div style="margin-top:12px; font-size:0.8rem; color:#888;">Покупайте новые башни за монеты</div>
             </div>
         </div>
     </div>
@@ -76,6 +78,11 @@
                     <span class="tower-icon">⚡</span>
                     <span class="tower-name">Электрошокер</span>
                     <span class="tower-cost">95💰</span>
+                </div>
+                <div class="tower-card" data-tower="laser">
+                    <span class="tower-icon">🔴</span>
+                    <span class="tower-name">Лазер</span>
+                    <span class="tower-cost">600💰</span>
                 </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
@@ -165,7 +172,7 @@
                 <button id="adminClearAll" class="btn" style="background:#e74c3c;">🧹 Очистить всё</button>
             </div>
 
-            <!-- БЛОК СПАВНА ВРАГОВ (с вулканическим мега-боссом) -->
+            <!-- БЛОК СПАВНА ВРАГОВ -->
             <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
                 <h4 style="color:#ffd700; margin:5px 0;">🧟 Спавн врага</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
@@ -199,7 +206,7 @@
                 </div>
             </div>
 
-            <!-- НОВЫЙ БЛОК: РЕДАКТОР СТАТОВ БАШНИ -->
+            <!-- БЛОК РЕДАКТОРА СТАТОВ БАШНИ -->
             <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
                 <h4 style="color:#ffd700; margin:5px 0;">⚙️ Редактор башни</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">

@@ -14,7 +14,6 @@ async function hashPassword(password) {
 
 export async function register(username, password) {
     console.log('Попытка регистрации:', username);
-    // Проверяем, не занят ли username
     const { data: existing, error: checkError } = await supabase
         .from('players')
         .select('id')
@@ -32,6 +31,9 @@ export async function register(username, password) {
     const passwordHash = await hashPassword(password);
     console.log('Хэш пароля:', passwordHash);
 
+    // ===== ИЗМЕНЕНИЕ: убираем electric из начального списка =====
+    const defaultTowers = ['pistol', 'flame', 'dj'];
+
     const { data, error } = await supabase
         .from('players')
         .insert([{
@@ -39,7 +41,7 @@ export async function register(username, password) {
             password_hash: passwordHash,
             gold: 150,
             coins: 0,
-            unlocked_towers: ['pistol', 'flame', 'dj', 'electric'],
+            unlocked_towers: defaultTowers,
             completed_waves: 0,
             achievements: []
         }])

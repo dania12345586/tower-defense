@@ -1,6 +1,6 @@
 import { GameMap } from './map.js';
 import { Enemy, createEnemy, Megaboss } from './enemy.js';
-import { Tower, FlameTower, DJTower, ElectricTower, Bullet, FlameBullet, SoundWaveBullet } from './towers/index.js';
+import { Tower, FlameTower, DJTower, ElectricTower, LaserTower, Bullet, FlameBullet, SoundWaveBullet } from './towers/index.js';
 import { WAVES } from './configs/waveConfig.js';
 import { TOWER_TYPES } from './configs/towerConfig.js';
 import { getSelectedTowers } from './ui/menu.js';
@@ -51,13 +51,15 @@ export class GameEngine {
         this.maxShockers = 3;
         this.pistolCount = 0;
         this.maxPistols = 4;
+        this.laserCount = 0;
+        this.maxLasers = 2;
 
         this.currentPathIndex = 0;
         this.gameEnded = false;
         this.isFirstWave = true;
         this.menuButtonCreated = false;
 
-        this.unlockedTowers = ['pistol', 'flame', 'dj', 'electric'];
+        this.unlockedTowers = ['pistol', 'flame', 'dj'];
         this.achievements = [];
         this.userId = null;
         this.username = null;
@@ -102,7 +104,8 @@ export class GameEngine {
             shootPistol: { path: 'sounds/shoot_pistol.mp3', volume: 0.15 },
             shootFlame: { path: 'sounds/shoot_flame.mp3', volume: 0.4 },
             shootElectric: { path: 'sounds/shoot_electric.mp3', volume: 0.15 },
-            shootDj: { path: 'sounds/shoot_dj.mp3', volume: 0.15 }
+            shootDj: { path: 'sounds/shoot_dj.mp3', volume: 0.15 },
+            shootLaser: { path: 'sounds/shoot_laser.mp3', volume: 0.2 }
         };
         for (const [key, config] of Object.entries(soundFiles)) {
             try {
@@ -182,12 +185,12 @@ export class GameEngine {
     }
 
     init() {
-        this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj', 'electric'];
+        this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj'];
 
         const playBtn = document.getElementById('mapSelectPlayBtn');
         if (playBtn) {
             playBtn.addEventListener('click', () => {
-                this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj', 'electric'];
+                this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj'];
                 const checkedMap = document.querySelector('input[name="map"]:checked');
                 if (checkedMap) this.selectedMap = checkedMap.value;
                 document.getElementById('mapSelectMenu').style.display = 'none';
@@ -262,7 +265,7 @@ export class GameEngine {
                 const progress = await loadProgress(this.userId);
                 if (progress) {
                     this.coins = progress.coins || 0;
-                    this.unlockedTowers = progress.unlocked_towers || ['pistol', 'flame', 'dj', 'electric'];
+                    this.unlockedTowers = progress.unlocked_towers || ['pistol', 'flame', 'dj'];
                     this.achievements = progress.achievements || [];
                     console.log('Загружены монеты:', this.coins);
                 }
@@ -281,13 +284,14 @@ export class GameEngine {
         this.isFirstWave = true;
         this.menuButtonCreated = false;
 
-        this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj', 'electric'];
+        this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj'];
 
         this.map = new GameMap(this.canvas.width, this.canvas.height, 40, this.selectedMap);
         this.flameTowerCount = 0;
         this.djTowerCount = 0;
         this.shockerCount = 0;
         this.pistolCount = 0;
+        this.laserCount = 0;
         this.currentPathIndex = 0;
         this.gameEnded = false;
         this.waveInProgress = false;
@@ -404,6 +408,7 @@ export class GameEngine {
             else if (this.selectedTowerType === 'flame') previewRange = 120;
             else if (this.selectedTowerType === 'dj') previewRange = 140;
             else if (this.selectedTowerType === 'electric') previewRange = 155;
+            else if (this.selectedTowerType === 'laser') previewRange = 220;
 
             this.ctx.fillStyle = canBuild && enoughGold ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)';
             this.ctx.beginPath();
@@ -446,6 +451,7 @@ export class GameEngine {
         if (type === 'flame') return 200;
         if (type === 'dj') return 280;
         if (type === 'electric') return 95;
+        if (type === 'laser') return 600;
         return 0;
     }
 
@@ -471,7 +477,8 @@ export class GameEngine {
             pistol: { label: '🔫 Пистолетчик', cost: 60 },
             flame: { label: '🔥 Огнемёт', cost: 200 },
             dj: { label: '🎧 DJ', cost: 280 },
-            electric: { label: '⚡ Электрошокер', cost: 95 }
+            electric: { label: '⚡ Электрошокер', cost: 95 },
+            laser: { label: '🔴 Лазер', cost: 600 }
         };
         for (const type of this.selectedTowers) {
             const cfg = configs[type];
@@ -553,6 +560,13 @@ export class GameEngine {
                         }
                         tower = new ElectricTower(tx, ty);
                         this.shockerCount++;
+                    } else if (this.selectedTowerType === 'laser') {
+                        if (this.laserCount >= this.maxLasers) {
+                            this.shopHint.textContent = 'Достигнут лимит лазеров (2)!';
+                            return;
+                        }
+                        tower = new LaserTower(tx, ty);
+                        this.laserCount++;
                     }
                     tower.gridX = gridX;
                     tower.gridY = gridY;
@@ -627,6 +641,7 @@ export class GameEngine {
         else if (tower.type === 'flame') this.flameTowerCount--;
         else if (tower.type === 'dj') this.djTowerCount--;
         else if (tower.type === 'electric') this.shockerCount--;
+        else if (tower.type === 'laser') this.laserCount--;
 
         this.gold += price;
         if (this.selectedTower === tower) {

@@ -2,7 +2,7 @@ export const TOWER_TYPES = {
     pistol: {
         range: 170,
         damage: 15,
-        fireRate: 1.25,   // было 1.0
+        fireRate: 1.25,
         cost: 60,
         upgradeCost: 110,
         color: '#4444ff',
@@ -61,6 +61,19 @@ export const TOWER_TYPES = {
         label: 'Электрошокер',
         icon: '⚡',
         desc: 'Цепная молния, шанс стана (ранняя-средняя игра)'
+    },
+    laser: {
+        range: 220,
+        damage: 25,
+        fireRate: 0.1,
+        cost: 600,
+        upgradeCost: 400,
+        color: '#ff44ff',
+        maxLevel: 5,
+        burnDamagePerSec: 0,
+        label: 'Лазер',
+        icon: '🔴',
+        desc: 'Постоянный урон, зарядка на цели (поздняя игра)'
     }
 };
 

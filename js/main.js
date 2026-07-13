@@ -4,33 +4,40 @@ import { initAdminPanel } from './adminPanel.js';
 
 const authScreen = document.getElementById('authScreen');
 const mainMenu = document.getElementById('mainMenu');
-const towerSelectMenu = document.getElementById('towerSelectMenu');
 const mapSelectMenu = document.getElementById('mapSelectMenu');
 const gameContainer = document.getElementById('gameContainer');
 const authMessage = document.getElementById('authMessage');
 
-// Функция для запуска игры (создаёт экземпляр)
+// Функция запуска игры
 function startGameEngine() {
     if (!window.game) {
         window.game = new GameEngine();
-        initAdminPanel(); // инициализируем админ-панель после создания игры
+        initAdminPanel();
     }
 }
 
-// Проверяем валидного пользователя
+// Проверка авторизации
 const savedUser = getCurrentUser();
 if (savedUser) {
     window._userId = savedUser.id;
     window._username = savedUser.username;
     authScreen.style.display = 'none';
     mainMenu.style.display = 'flex';
-    // Создаём игру сразу после авторизации
     startGameEngine();
+    updateCoinsDisplay();
 } else {
     clearCurrentUser();
 }
 
-// Регистрация
+// Обновление отображения монет в меню
+function updateCoinsDisplay() {
+    const coinsDisplay = document.getElementById('coinsDisplay');
+    if (coinsDisplay && window.game) {
+        coinsDisplay.textContent = window.game.coins || 0;
+    }
+}
+
+// ---- АВТОРИЗАЦИЯ ----
 document.getElementById('authRegisterBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
@@ -49,7 +56,6 @@ document.getElementById('authRegisterBtn').addEventListener('click', async () =>
     }
 });
 
-// Вход
 document.getElementById('authLoginBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
@@ -66,18 +72,41 @@ document.getElementById('authLoginBtn').addEventListener('click', async () => {
         authMessage.textContent = '✅ Вход выполнен!';
         authScreen.style.display = 'none';
         mainMenu.style.display = 'flex';
-        // Создаём игру после входа
         startGameEngine();
+        updateCoinsDisplay();
     } catch (e) {
         authMessage.textContent = '❌ ' + e.message;
     }
 });
 
-// Кнопка "Играть" в главном меню
+// ---- КНОПКА "ИГРАТЬ" В ГЛАВНОМ МЕНЮ ----
 document.getElementById('startGameBtn').addEventListener('click', () => {
+    // Собираем выбранные башни из чекбоксов в левой колонке
+    const checked = document.querySelectorAll('#mainMenu .tower-checkbox:checked');
+    if (checked.length === 0) {
+        alert('Выберите хотя бы одну башню!');
+        return;
+    }
+    const selectedTowers = Array.from(checked).map(cb => cb.value);
+    window._selectedTowers = selectedTowers;
+
+    // Скрываем главное меню, показываем выбор карты
     mainMenu.style.display = 'none';
-    towerSelectMenu.style.display = 'flex';
+    mapSelectMenu.style.display = 'flex';
 });
 
-// Остальные переходы (выбор башен, карт) обрабатываются в engine.js
-// При нажатии "Играть!" в mapSelectMenu вызывается engine.startGame()
+// ---- МАГАЗИН (заглушка) ----
+document.getElementById('shopBtn').addEventListener('click', () => {
+    alert('🛒 Магазин временно недоступен. Скоро появится!');
+});
+
+// ---- ПЕРЕКЛЮЧЕНИЕ ВЫБОРА БАШЕН (чекбоксы) ----
+document.querySelectorAll('#mainMenu .tower-card-vertical').forEach(card => {
+    const checkbox = card.querySelector('.tower-checkbox');
+    card.addEventListener('click', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        checkbox.checked = !checkbox.checked;
+        card.classList.toggle('selected', checkbox.checked);
+    });
+    if (checkbox.checked) card.classList.add('selected');
+});

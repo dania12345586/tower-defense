@@ -177,3 +177,134 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     .map-card .map-preview { height:50px; font-size:20px; }
     .map-card .map-name { font-size:12px; }
 }
+
+/* ===== НОВОЕ ГЛАВНОЕ МЕНЮ (3 колонки) ===== */
+.menu-main {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    padding: 30px;
+    max-width: 900px;
+    align-items: stretch;
+}
+
+.menu-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+
+.menu-column-left {
+    align-items: stretch;
+    text-align: left;
+}
+
+.menu-column-center {
+    text-align: center;
+}
+
+.menu-column-right {
+    text-align: center;
+}
+
+.menu-title {
+    font-size: 3rem;
+    color: #ffd700;
+    margin: 0 0 10px 0;
+    letter-spacing: 2px;
+}
+
+.menu-coins {
+    font-size: 1.5rem;
+    color: #ffd700;
+    background: rgba(0,0,0,0.3);
+    padding: 8px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+/* Вертикальный список башен */
+.tower-select-grid-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.tower-card-vertical {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+.tower-card-vertical:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+.tower-card-vertical.selected {
+    border-color: #ffd700;
+    background: rgba(255,215,0,0.15);
+    box-shadow: 0 0 20px rgba(255,215,0,0.2);
+}
+
+.tower-card-vertical .tower-icon {
+    font-size: 28px;
+    width: 40px;
+    text-align: center;
+}
+
+.tower-card-vertical .tower-name {
+    font-weight: bold;
+    font-size: 1rem;
+    flex: 1;
+}
+
+.tower-card-vertical .tower-cost {
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.tower-card-vertical input[type="checkbox"] {
+    display: none;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .menu-main {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+    .menu-column {
+        width: 100%;
+    }
+    .menu-column-left {
+        order: 2;
+    }
+    .menu-column-center {
+        order: 1;
+    }
+    .menu-column-right {
+        order: 3;
+    }
+    .menu-title {
+        font-size: 2.2rem;
+    }
+    .tower-card-vertical {
+        padding: 10px 14px;
+    }
+    .tower-card-vertical .tower-icon {
+        font-size: 24px;
+        width: 32px;
+    }
+}

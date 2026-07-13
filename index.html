@@ -23,50 +23,57 @@
         </div>
     </div>
 
-    <!-- ГЛАВНОЕ МЕНЮ -->
+    <!-- ГЛАВНОЕ МЕНЮ (НОВОЕ) -->
     <div id="mainMenu" class="menu-overlay" style="display: none;">
-        <div class="menu-box">
-            <h1>🏰 Tower Defense</h1>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
-                <button id="startGameBtn" class="btn big-btn">▶ Играть</button>
-                <div style="font-size: 18px; color: #ffd700; background: rgba(0,0,0,0.3); padding: 6px 16px; border-radius: 8px;">
+        <div class="menu-box menu-main">
+            <!-- Левая колонка: выбор башен -->
+            <div class="menu-column menu-column-left">
+                <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🏗️ Выбор башен</h2>
+                <div class="tower-select-grid-vertical">
+                    <label class="tower-card-vertical" data-tower="pistol">
+                        <input type="checkbox" class="tower-checkbox" value="pistol" checked>
+                        <span class="tower-icon">🔫</span>
+                        <span class="tower-name">Пистолетчик</span>
+                        <span class="tower-cost">60💰</span>
+                    </label>
+                    <label class="tower-card-vertical" data-tower="flame">
+                        <input type="checkbox" class="tower-checkbox" value="flame" checked>
+                        <span class="tower-icon">🔥</span>
+                        <span class="tower-name">Огнемёт</span>
+                        <span class="tower-cost">200💰</span>
+                    </label>
+                    <label class="tower-card-vertical" data-tower="dj">
+                        <input type="checkbox" class="tower-checkbox" value="dj">
+                        <span class="tower-icon">🎧</span>
+                        <span class="tower-name">DJ</span>
+                        <span class="tower-cost">280💰</span>
+                    </label>
+                    <label class="tower-card-vertical" data-tower="electric">
+                        <input type="checkbox" class="tower-checkbox" value="electric">
+                        <span class="tower-icon">⚡</span>
+                        <span class="tower-name">Электрошокер</span>
+                        <span class="tower-cost">95💰</span>
+                    </label>
+                </div>
+                <div style="font-size:0.8rem; color:#888; margin-top:8px;">Выберите башни для игры</div>
+            </div>
+
+            <!-- Центральная колонка: название и кнопка -->
+            <div class="menu-column menu-column-center">
+                <h1 class="menu-title">🏰 Tower Defense</h1>
+                <div class="menu-coins">
                     🪙 <span id="coinsDisplay">0</span>
                 </div>
+                <button id="startGameBtn" class="btn big-btn">▶ Играть</button>
+                <div style="margin-top:12px; font-size:0.8rem; color:#aaa;">Выберите башни слева</div>
             </div>
-        </div>
-    </div>
 
-    <!-- ВЫБОР БАШЕН -->
-    <div id="towerSelectMenu" class="menu-overlay" style="display: none;">
-        <div class="menu-box">
-            <h2>Выберите башни</h2>
-            <div class="tower-select-grid">
-                <label class="tower-card" data-tower="pistol">
-                    <input type="checkbox" class="tower-checkbox" value="pistol" checked>
-                    <span class="tower-icon">🔫</span>
-                    <span class="tower-name">Пистолетчик</span>
-                    <span class="tower-cost">60💰</span>
-                </label>
-                <label class="tower-card" data-tower="flame">
-                    <input type="checkbox" class="tower-checkbox" value="flame" checked>
-                    <span class="tower-icon">🔥</span>
-                    <span class="tower-name">Огнемёт</span>
-                    <span class="tower-cost">200💰</span>
-                </label>
-                <label class="tower-card" data-tower="dj">
-                    <input type="checkbox" class="tower-checkbox" value="dj">
-                    <span class="tower-icon">🎧</span>
-                    <span class="tower-name">DJ</span>
-                    <span class="tower-cost">280💰</span>
-                </label>
-                <label class="tower-card" data-tower="electric">
-                    <input type="checkbox" class="tower-checkbox" value="electric">
-                    <span class="tower-icon">⚡</span>
-                    <span class="tower-name">Электрошокер</span>
-                    <span class="tower-cost">95💰</span>
-                </label>
+            <!-- Правая колонка: магазин (заглушка) -->
+            <div class="menu-column menu-column-right">
+                <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🛒 Магазин</h2>
+                <button id="shopBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">В разработке</button>
+                <div style="margin-top:12px; font-size:0.8rem; color:#888;">Скоро здесь будут скины и улучшения</div>
             </div>
-            <button id="towerSelectNextBtn" class="btn big-btn">Далее →</button>
         </div>
     </div>
 

@@ -3,7 +3,7 @@ import { Enemy, createEnemy, Megaboss } from './enemy.js';
 import { Tower, FlameTower, DJTower, ElectricTower, Bullet, FlameBullet, SoundWaveBullet } from './towers/index.js';
 import { WAVES } from './configs/waveConfig.js';
 import { TOWER_TYPES } from './configs/towerConfig.js';
-import { initMenu, getSelectedTowers } from './ui/menu.js';
+import { getSelectedTowers } from './ui/menu.js';
 import { updateTowerPanel } from './ui/towerPanel.js';
 import { loadProgress, saveProgress } from './auth.js';
 
@@ -183,13 +183,13 @@ export class GameEngine {
     }
 
     init() {
-        initMenu();
-        this.selectedTowers = getSelectedTowers();
+        // Инициализация выбранных башен из глобальной переменной
+        this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj', 'electric'];
 
         const playBtn = document.getElementById('mapSelectPlayBtn');
         if (playBtn) {
             playBtn.addEventListener('click', () => {
-                this.selectedTowers = getSelectedTowers();
+                this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj', 'electric'];
                 const checkedMap = document.querySelector('input[name="map"]:checked');
                 if (checkedMap) this.selectedMap = checkedMap.value;
                 document.getElementById('mapSelectMenu').style.display = 'none';
@@ -218,8 +218,7 @@ export class GameEngine {
             });
         }
 
-        // Обработчик админ-панели добавлен в adminPanel.js
-        // (удалён дублирующий код)
+        // Обработчик админ-панели добавлен в adminPanel.js (удалён дублирующий код)
 
         this.canvas.addEventListener('click', (e) => {
             const pos = this.getPointerPos(e);
@@ -289,8 +288,8 @@ export class GameEngine {
         this.isFirstWave = true;
         this.menuButtonCreated = false;
 
-        // Все башни доступны
-        this.selectedTowers = ['pistol', 'flame', 'dj', 'electric'];
+        // Берём башни из глобальной переменной
+        this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj', 'electric'];
 
         this.map = new GameMap(this.canvas.width, this.canvas.height, 40, this.selectedMap);
         this.flameTowerCount = 0;

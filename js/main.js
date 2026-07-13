@@ -3,6 +3,8 @@ import { register, login, getCurrentUser, setCurrentUser, clearCurrentUser, load
 import { initAdminPanel } from './adminPanel.js';
 import { createRoomHandler, renderRoomList } from './lobby.js';
 
+// ... остальной код без изменений
+
 const authScreen = document.getElementById('authScreen');
 const mainMenu = document.getElementById('mainMenu');
 const mapSelectMenu = document.getElementById('mapSelectMenu');

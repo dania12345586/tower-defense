@@ -28,7 +28,7 @@ function updateCoinsDisplay() {
     }
 }
 
-// ----- ОТОБРАЖЕНИЕ ВЫБРАННЫХ БАШЕН В ГЛАВНОМ МЕНЮ -----
+// ----- ОТОБРАЖЕНИЕ ВЫБРАННЫХ БАШЕН -----
 function renderSelectedTowers() {
     const container = document.getElementById('selectedTowersDisplay');
     if (!container) return;
@@ -52,7 +52,7 @@ function renderSelectedTowers() {
     });
 }
 
-// ----- ОБНОВЛЕНИЕ СОСТОЯНИЯ МОДАЛКИ -----
+// ----- МОДАЛКА ВЫБОРА БАШЕН -----
 function updateModalState() {
     const cards = document.querySelectorAll('#towerSelectModal .tower-card');
     cards.forEach(card => {
@@ -65,7 +65,6 @@ function updateModalState() {
     });
 }
 
-// ----- ОТКРЫТИЕ МОДАЛКИ -----
 function openTowerSelectModal() {
     const modal = document.getElementById('towerSelectModal');
     updateModalState();
@@ -73,12 +72,10 @@ function openTowerSelectModal() {
     modal.style.display = 'flex';
 }
 
-// ----- ЗАКРЫТИЕ МОДАЛКИ -----
 function closeTowerSelectModal() {
     document.getElementById('towerSelectModal').style.display = 'none';
 }
 
-// ----- ОБРАБОТЧИК КЛИКА ПО КАРТОЧКЕ -----
 function handleTowerCardClick(e) {
     const card = e.target.closest('.tower-card');
     if (!card) return;
@@ -102,7 +99,6 @@ function handleTowerCardClick(e) {
     document.getElementById('towerSelectWarning').textContent = '';
 }
 
-// ----- СОХРАНЕНИЕ -----
 function saveTowerSelection() {
     if (selectedTowers.length === 0) {
         document.getElementById('towerSelectWarning').textContent = '❌ Выберите хотя бы одну башню!';
@@ -113,7 +109,6 @@ function saveTowerSelection() {
     closeTowerSelectModal();
 }
 
-// ----- ОТМЕНА -----
 function cancelTowerSelection() {
     if (window._selectedTowers) {
         selectedTowers = [...window._selectedTowers];
@@ -123,6 +118,18 @@ function cancelTowerSelection() {
     updateModalState();
     renderSelectedTowers();
     closeTowerSelectModal();
+}
+
+// ----- ВЫБОР КАРТЫ (подсветка) -----
+function initMapSelection() {
+    const mapCards = document.querySelectorAll('.map-card');
+    mapCards.forEach(card => {
+        card.addEventListener('click', function() {
+            mapCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+        });
+    });
 }
 
 // ----- АВТОРИЗАЦИЯ -----
@@ -135,9 +142,12 @@ if (savedUser) {
     startGameEngine();
     updateCoinsDisplay();
     renderSelectedTowers();
+    initMapSelection(); // инициализируем подсветку карт
 } else {
     clearCurrentUser();
 }
+
+// ... остальные обработчики (регистрация, вход) без изменений ...
 
 document.getElementById('authRegisterBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
@@ -176,12 +186,13 @@ document.getElementById('authLoginBtn').addEventListener('click', async () => {
         startGameEngine();
         updateCoinsDisplay();
         renderSelectedTowers();
+        initMapSelection(); // после входа тоже инициализируем
     } catch (e) {
         authMessage.textContent = '❌ ' + e.message;
     }
 });
 
-// ----- КНОПКА "ИГРАТЬ" (ПЕРЕХОД НА ВЫБОР КАРТЫ) -----
+// ----- КНОПКА "ИГРАТЬ" -----
 document.getElementById('startGameBtn').addEventListener('click', () => {
     if (selectedTowers.length === 0) {
         alert('Выберите хотя бы одну башню!');
@@ -190,7 +201,8 @@ document.getElementById('startGameBtn').addEventListener('click', () => {
     window._selectedTowers = selectedTowers;
     mainMenu.style.display = 'none';
     mapSelectMenu.style.display = 'flex';
-    console.log('Переход на выбор карты, башни:', selectedTowers);
+    // Повторно инициализируем карты, если они были скрыты
+    initMapSelection();
 });
 
 // ----- МАГАЗИН (заглушка) -----
@@ -218,3 +230,4 @@ document.getElementById('towerSelectModal').addEventListener('click', (e) => {
 // Инициализация
 window._selectedTowers = selectedTowers;
 renderSelectedTowers();
+initMapSelection();

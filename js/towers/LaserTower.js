@@ -61,16 +61,18 @@ export class LaserTower extends Tower {
     constructor(x, y) {
         super(x, y, 'laser');
         this.color = '#ff44ff';
+        // НОВЫЙ БАЛАНС
+        this.baseDamage = 5;
+        this.chargeRate = 2;          // +2 урона в секунду
+        this.maxCharge = 15;           // максимальный бонус
+        this.fireRate = 0.15;          // 0.15 сек между атаками
+        // Остальное
         this.charge = 0;
-        this.maxCharge = 50;
-        this.chargeRate = 5;
         this.currentTarget = null;
         this.chargeTimer = 0;
         this.beam = null;
         this.range = 220;
-        this.baseDamage = 25;
-        this.damage = 25;
-        this.fireRate = 0.1;
+        this.damage = 5;
         this.cost = 600;
         this.upgradeCost = 400;
         this.maxLevel = 5;
@@ -83,10 +85,12 @@ export class LaserTower extends Tower {
     upgrade() {
         if (this.level >= this.maxLevel) return;
         this.level++;
-        this.baseDamage = Math.floor(this.baseDamage * 1.2);
-        this.chargeRate += 2;
-        this.maxCharge += 10;
-        this.range = Math.floor(this.range * 1.08);
+        // Увеличение характеристик с каждым уровнем
+        this.baseDamage = Math.floor(this.baseDamage * 1.25);
+        this.chargeRate += 1.5;
+        this.maxCharge += 5;
+        this.range = Math.floor(this.range * 1.07);
+        this.fireRate = Math.max(0.08, this.fireRate * 0.95);
         this.upgradeCost = Math.floor(this.upgradeCost * 1.5);
         this.totalCost += this.upgradeCost;
         this.damage = this.baseDamage;

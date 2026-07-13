@@ -64,10 +64,10 @@ export const TOWER_TYPES = {
     },
     laser: {
         range: 220,
-        damage: 25,
-        fireRate: 0.1,
+        damage: 5,
+        fireRate: 0.15,
         cost: 600,
-        upgradeCost: 400,
+        upgradeCost: 700,
         color: '#ff44ff',
         maxLevel: 5,
         burnDamagePerSec: 0,
@@ -77,5 +77,5 @@ export const TOWER_TYPES = {
     }
 };
 
-export const UPGRADE_COST_MULTIPLIER = 1.5;
+export const UPGRADE_COST_MULTIPLIER = 1.6,
 export const MAX_TOWER_LEVEL = 5;

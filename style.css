@@ -31,7 +31,7 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
 .tower-card {
     background:rgba(255,255,255,0.05);
     border-radius:16px;
-    padding:16px 12px;
+    padding:12px 8px;
     text-align:center;
     border:2px solid transparent;
     cursor:pointer;
@@ -46,7 +46,13 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     box-shadow:0 0 25px rgba(255,215,0,0.25);
 }
 .tower-card .tower-icon { font-size:48px; display:block; margin-bottom:6px; }
-.tower-card .tower-name { font-weight:bold; font-size:18px; margin:4px 0; }
+.tower-card .tower-name {
+    font-weight:bold; font-size:18px; margin:4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
 .tower-card .tower-cost { font-size:15px; color:#aaa; }
 .tower-card .tower-desc { font-size:13px; color:#888; margin:4px 0; }
 .tower-card .help-btn {
@@ -69,7 +75,7 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
 .map-card {
     background:rgba(255,255,255,0.05);
     border-radius:12px;
-    padding:10px 8px;
+    padding:8px 4px;
     text-align:center;
     border:2px solid transparent;
     cursor:pointer;
@@ -86,13 +92,17 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:24px;
+    font-size:18px;
     margin-bottom:4px;
 }
 .map-card .map-name {
     font-weight:bold;
     font-size:14px;
     display:block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 .map-card input[type="radio"] { display:none; }
 
@@ -238,7 +248,6 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     100% { filter: drop-shadow(0 0 16px rgba(255,215,0,0.9)); transform: scale(1.05); }
 }
 
-/* Отображение выбранных башен */
 #selectedTowersDisplay {
     display: flex;
     flex-wrap: wrap;
@@ -277,4 +286,19 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     .menu-title {
         font-size: 2.2rem;
     }
+}
+
+/* Стили для модалки магазина */
+.shop-item-modal {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #444;
+}
+.shop-item-modal .btn {
+    padding: 4px 16px;
+    font-size: 0.9rem;
 }

@@ -32,7 +32,6 @@ function updateCoinsDisplay() {
     if (window.game) {
         window.game.coins = coins;
     }
-    // Обновляем монеты в магазине
     renderShopModal();
 }
 
@@ -95,7 +94,7 @@ function updateModalState() {
     });
 }
 
-// ----- ОТКРЫТИЕ МОДАЛКИ ВЫБОРА БАШЕН -----
+// ----- ОТКРЫТИЕ МОДАЛКИ ВЫБОРА -----
 function openTowerSelectModal() {
     const modal = document.getElementById('towerSelectModal');
     updateModalState();
@@ -206,7 +205,6 @@ function renderShopModal() {
         container.appendChild(div);
     });
 
-    // Отображаем текущее количество монет
     const coinDisplay = document.getElementById('shopCoinsDisplay');
     if (coinDisplay) coinDisplay.textContent = coins;
 }
@@ -332,7 +330,7 @@ document.getElementById('shopModal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeShopModal();
 });
 
-// ----- ОТКРЫТИЕ МОДАЛКИ ВЫБОРА БАШЕН -----
+// ----- ОТКРЫТИЕ МОДАЛКИ ВЫБОРА -----
 document.getElementById('openTowerSelectBtn').addEventListener('click', openTowerSelectModal);
 
 // ----- СОХРАНЕНИЕ / ОТМЕНА В ВЫБОРЕ -----
@@ -347,6 +345,16 @@ document.getElementById('towerSelectModal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) {
         cancelTowerSelection();
     }
+});
+
+// ----- ПОДСВЕТКА КАРТ ПРИ ВЫБОРЕ -----
+document.querySelectorAll('.map-card').forEach(card => {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+    });
 });
 
 // Инициализация

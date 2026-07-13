@@ -23,39 +23,16 @@
         </div>
     </div>
 
-    <!-- ГЛАВНОЕ МЕНЮ (НОВОЕ) -->
+    <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="menu-overlay" style="display: none;">
         <div class="menu-box menu-main">
-            <!-- Левая колонка: выбор башен -->
+            <!-- Левая колонка: кнопка выбора башен + отображение выбранных -->
             <div class="menu-column menu-column-left">
-                <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🏗️ Выбор башен</h2>
-                <div class="tower-select-grid-vertical">
-                    <label class="tower-card-vertical" data-tower="pistol">
-                        <input type="checkbox" class="tower-checkbox" value="pistol" checked>
-                        <span class="tower-icon">🔫</span>
-                        <span class="tower-name">Пистолетчик</span>
-                        <span class="tower-cost">60💰</span>
-                    </label>
-                    <label class="tower-card-vertical" data-tower="flame">
-                        <input type="checkbox" class="tower-checkbox" value="flame" checked>
-                        <span class="tower-icon">🔥</span>
-                        <span class="tower-name">Огнемёт</span>
-                        <span class="tower-cost">200💰</span>
-                    </label>
-                    <label class="tower-card-vertical" data-tower="dj">
-                        <input type="checkbox" class="tower-checkbox" value="dj">
-                        <span class="tower-icon">🎧</span>
-                        <span class="tower-name">DJ</span>
-                        <span class="tower-cost">280💰</span>
-                    </label>
-                    <label class="tower-card-vertical" data-tower="electric">
-                        <input type="checkbox" class="tower-checkbox" value="electric">
-                        <span class="tower-icon">⚡</span>
-                        <span class="tower-name">Электрошокер</span>
-                        <span class="tower-cost">95💰</span>
-                    </label>
+                <button id="openTowerSelectBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">🏗️ Выбрать башни</button>
+                <div id="selectedTowersDisplay" style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+                    <!-- Сюда будут вставляться иконки выбранных башен -->
                 </div>
-                <div style="font-size:0.8rem; color:#888; margin-top:8px;">Выберите башни для игры</div>
+                <div style="font-size:0.8rem; color:#888; margin-top:8px;">Нажмите, чтобы изменить набор</div>
             </div>
 
             <!-- Центральная колонка: название и кнопка -->
@@ -73,6 +50,43 @@
                 <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🛒 Магазин</h2>
                 <button id="shopBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">В разработке</button>
                 <div style="margin-top:12px; font-size:0.8rem; color:#888;">Скоро здесь будут скины и улучшения</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ВЫБОРА БАШЕН (отдельный экран) -->
+    <div id="towerSelectModal" class="menu-overlay" style="display: none; z-index: 200;">
+        <div class="menu-box" style="max-width: 600px;">
+            <h2>Выберите башни</h2>
+            <div class="tower-select-grid">
+                <label class="tower-card" data-tower="pistol">
+                    <input type="checkbox" class="tower-checkbox" value="pistol" checked>
+                    <span class="tower-icon">🔫</span>
+                    <span class="tower-name">Пистолетчик</span>
+                    <span class="tower-cost">60💰</span>
+                </label>
+                <label class="tower-card" data-tower="flame">
+                    <input type="checkbox" class="tower-checkbox" value="flame" checked>
+                    <span class="tower-icon">🔥</span>
+                    <span class="tower-name">Огнемёт</span>
+                    <span class="tower-cost">200💰</span>
+                </label>
+                <label class="tower-card" data-tower="dj">
+                    <input type="checkbox" class="tower-checkbox" value="dj">
+                    <span class="tower-icon">🎧</span>
+                    <span class="tower-name">DJ</span>
+                    <span class="tower-cost">280💰</span>
+                </label>
+                <label class="tower-card" data-tower="electric">
+                    <input type="checkbox" class="tower-checkbox" value="electric">
+                    <span class="tower-icon">⚡</span>
+                    <span class="tower-name">Электрошокер</span>
+                    <span class="tower-cost">95💰</span>
+                </label>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
+                <button id="saveTowerSelectBtn" class="btn big-btn" style="background:#2ecc71;">Сохранить</button>
+                <button id="cancelTowerSelectBtn" class="btn big-btn" style="background:#e74c3c;">Отмена</button>
             </div>
         </div>
     </div>
@@ -138,7 +152,7 @@
             </div>
         </div>
 
-        <!-- АДМИН-ПАНЕЛЬ (скрыта для всех, кроме данечка) -->
+        <!-- АДМИН-ПАНЕЛЬ -->
         <div id="adminPanel" style="display:none; background: #1a1a2e; border: 2px solid #e67e22; border-radius: 12px; padding: 15px; margin: 10px 0; width: 100%; max-width: 800px;">
             <h3 style="color:#e67e22; margin:0 0 10px 0;">🛠️ Админ-панель</h3>
             <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
@@ -155,8 +169,6 @@
                 <button id="adminSetSpeed" class="btn">Установить</button>
                 <button id="adminClearAll" class="btn" style="background:#e74c3c;">🧹 Очистить всё</button>
             </div>
-
-            <!-- БЛОК СПАВНА ВРАГОВ -->
             <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
                 <h4 style="color:#ffd700; margin:5px 0;">🧟 Спавн врага</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">

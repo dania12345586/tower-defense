@@ -199,7 +199,7 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
 
 .menu-column-left {
     align-items: stretch;
-    text-align: left;
+    text-align: center;
 }
 
 .menu-column-center {
@@ -226,56 +226,21 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     margin-bottom: 20px;
 }
 
-/* Вертикальный список башен */
-.tower-select-grid-vertical {
+/* Отображение выбранных башен */
+#selectedTowersDisplay {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 12px;
+    min-height: 50px;
 }
-
-.tower-card-vertical {
-    background: rgba(255,255,255,0.05);
+.selected-tower-icon {
+    font-size: 32px;
+    background: rgba(255,255,255,0.1);
     border-radius: 12px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: 0.2s;
-    backdrop-filter: blur(4px);
-}
-
-.tower-card-vertical:hover {
-    background: rgba(255,255,255,0.12);
-}
-
-.tower-card-vertical.selected {
-    border-color: #ffd700;
-    background: rgba(255,215,0,0.15);
-    box-shadow: 0 0 20px rgba(255,215,0,0.2);
-}
-
-.tower-card-vertical .tower-icon {
-    font-size: 28px;
-    width: 40px;
-    text-align: center;
-}
-
-.tower-card-vertical .tower-name {
-    font-weight: bold;
-    font-size: 1rem;
-    flex: 1;
-}
-
-.tower-card-vertical .tower-cost {
-    font-size: 0.9rem;
-    color: #aaa;
-}
-
-.tower-card-vertical input[type="checkbox"] {
-    display: none;
+    padding: 6px 10px;
+    border: 1px solid #555;
 }
 
 /* Адаптация для мобильных */
@@ -299,12 +264,5 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     }
     .menu-title {
         font-size: 2.2rem;
-    }
-    .tower-card-vertical {
-        padding: 10px 14px;
-    }
-    .tower-card-vertical .tower-icon {
-        font-size: 24px;
-        width: 32px;
     }
 }

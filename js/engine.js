@@ -465,7 +465,6 @@ export class GameEngine {
         }
     }
 
-    // ===== ИСПРАВЛЕННЫЙ МЕТОД =====
     updateShopUI() {
         this.shopItems.innerHTML = '';
         const configs = {
@@ -474,7 +473,6 @@ export class GameEngine {
             dj: { label: '🎧 DJ', cost: 280 },
             electric: { label: '⚡ Электрошокер', cost: 95 }
         };
-        // Показываем только те башни, которые выбраны в меню
         for (const type of this.selectedTowers) {
             const cfg = configs[type];
             if (!cfg) continue;
@@ -492,9 +490,7 @@ export class GameEngine {
         this.shopHint.textContent = this.selectedTowerType ? `Выбрано: ${this.selectedTowerType}` : 'Кликните по иконке для выбора';
     }
 
-    // ===== ИСПРАВЛЕННЫЙ МЕТОД =====
     selectTowerType(type) {
-        // Проверяем, что башня выбрана в меню
         if (!this.selectedTowers.includes(type)) {
             this.shopHint.textContent = 'Эта башня не выбрана в меню!';
             return;
@@ -518,7 +514,6 @@ export class GameEngine {
         if (this.gameOver || this.victory) return;
 
         if (this.selectedTowerType) {
-            // Дополнительная проверка – если тип не выбран в меню, сбросить
             if (!this.selectedTowers.includes(this.selectedTowerType)) {
                 this.selectedTowerType = null;
                 this.updateShopUI();

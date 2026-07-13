@@ -10,7 +10,7 @@ const authMessage = document.getElementById('authMessage');
 
 // ----- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ -----
 const MAX_TOWERS = 4;
-let selectedTowers = ['pistol', 'flame']; // по умолчанию
+let selectedTowers = ['pistol', 'flame'];
 
 // ----- ФУНКЦИЯ ЗАПУСКА ИГРЫ -----
 function startGameEngine() {
@@ -78,35 +78,31 @@ function closeTowerSelectModal() {
     document.getElementById('towerSelectModal').style.display = 'none';
 }
 
-// ----- ОБРАБОТЧИК КЛИКА ПО КАРТОЧКЕ (делегирование) -----
+// ----- ОБРАБОТЧИК КЛИКА ПО КАРТОЧКЕ -----
 function handleTowerCardClick(e) {
     const card = e.target.closest('.tower-card');
     if (!card) return;
     const type = card.dataset.tower;
     if (!type) return;
 
-    // Проверяем, выбрана ли уже
     if (selectedTowers.includes(type)) {
-        // Снимаем
         selectedTowers = selectedTowers.filter(t => t !== type);
         card.classList.remove('selected');
         document.getElementById('towerSelectWarning').textContent = '';
         return;
     }
 
-    // Проверяем лимит
     if (selectedTowers.length >= MAX_TOWERS) {
         document.getElementById('towerSelectWarning').textContent = `❌ Нельзя выбрать больше ${MAX_TOWERS} башен!`;
         return;
     }
 
-    // Добавляем
     selectedTowers.push(type);
     card.classList.add('selected');
     document.getElementById('towerSelectWarning').textContent = '';
 }
 
-// ----- СОХРАНЕНИЕ (закрываем модалку) -----
+// ----- СОХРАНЕНИЕ -----
 function saveTowerSelection() {
     if (selectedTowers.length === 0) {
         document.getElementById('towerSelectWarning').textContent = '❌ Выберите хотя бы одну башню!';
@@ -117,9 +113,8 @@ function saveTowerSelection() {
     closeTowerSelectModal();
 }
 
-// ----- ОТМЕНА (возвращаем сохранённый выбор) -----
+// ----- ОТМЕНА -----
 function cancelTowerSelection() {
-    // Восстанавливаем выбранные башни из window._selectedTowers (или из сохранённого)
     if (window._selectedTowers) {
         selectedTowers = [...window._selectedTowers];
     } else {
@@ -186,7 +181,7 @@ document.getElementById('authLoginBtn').addEventListener('click', async () => {
     }
 });
 
-// ----- КНОПКА "ИГРАТЬ" -----
+// ----- КНОПКА "ИГРАТЬ" (ПЕРЕХОД НА ВЫБОР КАРТЫ) -----
 document.getElementById('startGameBtn').addEventListener('click', () => {
     if (selectedTowers.length === 0) {
         alert('Выберите хотя бы одну башню!');
@@ -195,6 +190,7 @@ document.getElementById('startGameBtn').addEventListener('click', () => {
     window._selectedTowers = selectedTowers;
     mainMenu.style.display = 'none';
     mapSelectMenu.style.display = 'flex';
+    console.log('Переход на выбор карты, башни:', selectedTowers);
 });
 
 // ----- МАГАЗИН (заглушка) -----

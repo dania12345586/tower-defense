@@ -274,7 +274,15 @@ export class GameEngine {
             }
         }
 
-        this.gold = 120;
+        // ----- МУЛЬТИПЛЕЕРНАЯ НАСТРОЙКА -----
+        if (window._isMultiplayer) {
+            this.gold = 80;  // стартовое золото меньше
+            // Здесь будет логика увеличения врагов и другие мультиплеерные настройки
+            console.log('Запущена мультиплеерная игра!');
+        } else {
+            this.gold = 120;
+        }
+
         this.waveIndex = 0;
         this.wave = 1;
         this.lives = 20;
@@ -672,6 +680,10 @@ export class GameEngine {
             if (this.selectedMap === 'volcano') {
                 count *= 2;
             }
+            // В мультиплеере увеличиваем количество врагов
+            if (window._isMultiplayer && this.waveIndex > 3) {
+                count = Math.floor(count * 1.2); // +20% на некоторых волнах
+            }
             this.enemiesToSpawn += count;
             this.waveGroups.push({ type: g.type, count: count });
         }
@@ -686,7 +698,7 @@ export class GameEngine {
     spawnEnemy() {
         if (!this.waveGroups || this.waveGroupIndex >= this.waveGroups.length) return;
         const group = this.waveGroups[this.waveGroupIndex];
-        const enemyType = group.type;
+        let enemyType = group.type;
         let path;
         if (this.selectedMap === 'volcano') {
             path = this.map.paths[this.currentPathIndex % 2];
@@ -701,6 +713,12 @@ export class GameEngine {
         } else {
             enemy = createEnemy(path, enemyType);
         }
+        // В мультиплеере увеличиваем здоровье и скорость
+        if (window._isMultiplayer) {
+            enemy.hp = Math.floor(enemy.hp * 1.5);
+            enemy.maxHp = enemy.hp;
+            enemy.speed = Math.floor(enemy.speed * 1.1);
+        }
         this.enemies.push(enemy);
         this.waveGroupCounter++;
         if (this.waveGroupCounter >= group.count) {
@@ -714,7 +732,9 @@ export class GameEngine {
         this.waveIndex++;
         this.wave++;
         const bonus = 15 + this.wave * 3;
-        this.gold += bonus;
+        // В мультиплеере меньше бонус
+        const finalBonus = window._isMultiplayer ? Math.floor(bonus * 0.7) : bonus;
+        this.gold += finalBonus;
         this.score += 20;
         this.updateUI();
 

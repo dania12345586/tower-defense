@@ -40,6 +40,7 @@
                     <span class="coin-icon">🪙</span> <span id="coinsDisplay">0</span>
                 </div>
                 <button id="startGameBtn" class="btn big-btn">▶ Играть</button>
+                <button id="multiplayerBtn" class="btn big-btn" style="background:#8e44ad; margin-top:10px;">👥 Мультиплеер</button>
                 <div style="margin-top:12px; font-size:0.8rem; color:#aaa;">Выберите башни слева</div>
             </div>
 
@@ -95,7 +96,7 @@
                 <div class="tower-card" data-tower="laser">
                     <span class="tower-icon">🔴</span>
                     <span class="tower-name">Лазер</span>
-                    <span class="tower-cost">1000💰</span>   <!-- обновлено с 600 на 1000 -->
+                    <span class="tower-cost">1000💰</span>
                 </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
@@ -106,7 +107,25 @@
         </div>
     </div>
 
-    <!-- ВЫБОР КАРТ -->
+    <!-- МОДАЛКА СПИСКА КОМНАТ -->
+    <div id="roomListModal" class="menu-overlay" style="display: none; z-index: 150;">
+        <div class="menu-box" style="max-width: 500px;">
+            <h2>👥 Комнаты</h2>
+            <div id="roomListContainer" style="max-height:300px; overflow-y:auto; margin:16px 0;"></div>
+            <button id="createRoomBtn" class="btn big-btn" style="background:#2ecc71;">Создать комнату</button>
+            <button id="closeRoomListBtn" class="btn" style="background:#e74c3c; margin-top:8px;">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ЛОББИ -->
+    <div id="lobbyModal" class="menu-overlay" style="display: none; z-index: 160;">
+        <div class="menu-box" style="max-width: 600px;">
+            <h2>🏠 Лобби</h2>
+            <div id="lobbyContent"></div>
+        </div>
+    </div>
+
+    <!-- ВЫБОР КАРТ (для мультиплеера временно не используется) -->
     <div id="mapSelectMenu" class="menu-overlay" style="display: none;">
         <div class="menu-box">
             <h2>Выберите карту</h2>
@@ -184,8 +203,6 @@
                 <button id="adminSetSpeed" class="btn">Установить</button>
                 <button id="adminClearAll" class="btn" style="background:#e74c3c;">🧹 Очистить всё</button>
             </div>
-
-            <!-- БЛОК СПАВНА ВРАГОВ -->
             <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
                 <h4 style="color:#ffd700; margin:5px 0;">🧟 Спавн врага</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
@@ -218,8 +235,6 @@
                     <button id="adminSpawnMultipleBtn" class="btn" style="background:#3498db;">Создать 5</button>
                 </div>
             </div>
-
-            <!-- БЛОК РЕДАКТОРА СТАТОВ БАШНИ -->
             <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
                 <h4 style="color:#ffd700; margin:5px 0;">⚙️ Редактор башни</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">

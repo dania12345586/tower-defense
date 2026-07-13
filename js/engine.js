@@ -49,7 +49,7 @@ export class GameEngine {
         this.maxDjTowers = 1;
         this.shockerCount = 0;
         this.maxShockers = 3;
-        // ===== НОВЫЙ ЛИМИТ ДЛЯ ПИСТОЛЕТЧИКА =====
+        // Лимит для пистолетчиков
         this.pistolCount = 0;
         this.maxPistols = 4;
 
@@ -218,17 +218,8 @@ export class GameEngine {
             });
         }
 
-        // АДМИН-ПАНЕЛЬ: обработчик клика (но показ/скрытие будет в startGame)
-        this.toggleAdminBtn.addEventListener('click', () => {
-            const panel = document.getElementById('adminPanel');
-            if (panel.style.display === 'none') {
-                panel.style.display = 'block';
-                this.toggleAdminBtn.textContent = 'Скрыть админку';
-            } else {
-                panel.style.display = 'none';
-                this.toggleAdminBtn.textContent = 'Админ-панель';
-            }
-        });
+        // Обработчик админ-панели добавлен в adminPanel.js
+        // (удалён дублирующий код)
 
         this.canvas.addEventListener('click', (e) => {
             const pos = this.getPointerPos(e);
@@ -263,7 +254,7 @@ export class GameEngine {
         this.userId = window._userId;
         this.username = window._username;
 
-        // ===== ПОКАЗЫВАЕМ АДМИНКУ ТОЛЬКО ДЛЯ "данечка" =====
+        // Показываем кнопку админ-панели только для "данечка"
         if (this.username === 'данечка') {
             this.toggleAdminBtn.style.display = 'inline-block';
         } else {
@@ -305,7 +296,7 @@ export class GameEngine {
         this.flameTowerCount = 0;
         this.djTowerCount = 0;
         this.shockerCount = 0;
-        this.pistolCount = 0; // сброс счётчика
+        this.pistolCount = 0;
         this.currentPathIndex = 0;
         this.gameEnded = false;
         this.waveInProgress = false;
@@ -535,7 +526,6 @@ export class GameEngine {
                     const { x: tx, y: ty } = this.map.gridToPixel(gridX, gridY);
                     let tower;
                     if (this.selectedTowerType === 'pistol') {
-                        // ===== ПРОВЕРКА ЛИМИТА =====
                         if (this.pistolCount >= this.maxPistols) {
                             this.shopHint.textContent = 'Достигнут лимит пистолетчиков (4)!';
                             return;
@@ -633,7 +623,7 @@ export class GameEngine {
             const key = `${tower.gridX},${tower.gridY}`;
             this.map.occupiedCells.delete(key);
         }
-        // ===== УМЕНЬШАЕМ СЧЁТЧИК ПРИ ПРОДАЖЕ =====
+        // Уменьшаем счётчики при продаже
         if (tower.type === 'pistol') this.pistolCount--;
         else if (tower.type === 'flame') this.flameTowerCount--;
         else if (tower.type === 'dj') this.djTowerCount--;

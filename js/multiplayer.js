@@ -2,8 +2,9 @@ import { supabase } from './auth.js';
 
 let currentRoomId = null;
 let currentChannel = null;
+let roomCallbacks = {};
 
-// Подписка на изменения в комнате
+// --- Подписка на изменения в комнате ---
 export function subscribeToRoom(roomId, onUpdate) {
     if (currentChannel) {
         supabase.removeChannel(currentChannel);
@@ -12,17 +13,20 @@ export function subscribeToRoom(roomId, onUpdate) {
     currentChannel = supabase
         .channel(`room:${roomId}`)
         .on('postgres_changes', {
-            event: 'UPDATE',
+            event: '*',
             schema: 'public',
             table: 'rooms',
             filter: `id=eq.${roomId}`
         }, (payload) => {
             if (onUpdate) onUpdate(payload.new);
         })
-        .subscribe();
+        .subscribe((status) => {
+            console.log('Подписка на комнату:', status);
+        });
     return currentChannel;
 }
 
+// --- Отписаться ---
 export function unsubscribeFromRoom() {
     if (currentChannel) {
         supabase.removeChannel(currentChannel);
@@ -30,7 +34,7 @@ export function unsubscribeFromRoom() {
     }
 }
 
-// Создать комнату
+// --- Создать комнату ---
 export async function createRoom(hostId, map = 'default') {
     const { data, error } = await supabase
         .from('rooms')
@@ -46,7 +50,7 @@ export async function createRoom(hostId, map = 'default') {
     return data;
 }
 
-// Получить список комнат со статусом waiting
+// --- Получить список комнат ---
 export async function getWaitingRooms() {
     const { data, error } = await supabase
         .from('rooms')
@@ -57,7 +61,7 @@ export async function getWaitingRooms() {
     return data;
 }
 
-// Присоединиться к комнате
+// --- Присоединиться к комнате ---
 export async function joinRoom(roomId, userId) {
     const { data: room, error: fetchError } = await supabase
         .from('rooms')
@@ -80,7 +84,7 @@ export async function joinRoom(roomId, userId) {
     return data;
 }
 
-// Кикнуть игрока (только хост)
+// --- Кикнуть игрока (только хост) ---
 export async function kickPlayer(roomId, userId, hostId) {
     const { data: room, error: fetchError } = await supabase
         .from('rooms')
@@ -100,7 +104,7 @@ export async function kickPlayer(roomId, userId, hostId) {
     return data;
 }
 
-// Покинуть комнату
+// --- Покинуть комнату (с передачей хоста) ---
 export async function leaveRoom(roomId, userId) {
     const { data: room, error: fetchError } = await supabase
         .from('rooms')
@@ -108,11 +112,21 @@ export async function leaveRoom(roomId, userId) {
         .eq('id', roomId)
         .single();
     if (fetchError) throw fetchError;
+    
     let players = (room.players || []).filter(id => id !== userId);
     let newHostId = room.host_id;
+    
+    // Если хост уходит – передаём хоста первому в списке
     if (room.host_id === userId && players.length > 0) {
         newHostId = players[0];
     }
+    
+    // Если игроков больше нет – удаляем комнату
+    if (players.length === 0) {
+        await supabase.from('rooms').delete().eq('id', roomId);
+        return { deleted: true };
+    }
+    
     const { data, error } = await supabase
         .from('rooms')
         .update({ players, host_id: newHostId })
@@ -120,22 +134,20 @@ export async function leaveRoom(roomId, userId) {
         .select()
         .single();
     if (error) throw error;
-    if (players.length === 0) {
-        await supabase.from('rooms').delete().eq('id', roomId);
-    }
     return data;
 }
 
-// Голосование за карту (с удалением старого голоса)
+// --- Голосование за карту (с удалением старого голоса) ---
 export async function voteMap(roomId, playerId, map) {
-    // Удаляем старый голос, если он есть
-    await supabase
+    // Сначала удаляем старый голос
+    const { error: delError } = await supabase
         .from('room_votes')
         .delete()
         .eq('room_id', roomId)
         .eq('player_id', playerId);
+    if (delError) throw delError;
     
-    // Вставляем новый голос
+    // Вставляем новый
     const { error } = await supabase
         .from('room_votes')
         .insert({ room_id: roomId, player_id: playerId, map });
@@ -143,33 +155,17 @@ export async function voteMap(roomId, playerId, map) {
     return true;
 }
 
-// Получить текущие голоса с именами игроков
-export async function getVotesWithNames(roomId) {
-    const { data: votes, error } = await supabase
+// --- Получить текущие голоса ---
+export async function getVotes(roomId) {
+    const { data, error } = await supabase
         .from('room_votes')
-        .select('player_id, map')
+        .select('*')
         .eq('room_id', roomId);
     if (error) throw error;
-    
-    // Получаем имена игроков
-    const playerIds = votes.map(v => v.player_id);
-    if (playerIds.length === 0) return [];
-    const { data: players, error: playersError } = await supabase
-        .from('players')
-        .select('id, username')
-        .in('id', playerIds);
-    if (playersError) throw playersError;
-    
-    const playerMap = {};
-    players.forEach(p => { playerMap[p.id] = p.username; });
-    
-    return votes.map(v => ({
-        ...v,
-        username: playerMap[v.player_id] || v.player_id.slice(0,6)
-    }));
+    return data;
 }
 
-// Подписка на голоса
+// --- Подписка на голоса ---
 export function subscribeToVotes(roomId, onVoteUpdate) {
     const channel = supabase
         .channel(`votes:${roomId}`)
@@ -185,7 +181,20 @@ export function subscribeToVotes(roomId, onVoteUpdate) {
     return channel;
 }
 
-// Запустить игру (хост)
+// --- Получить имена игроков по их ID ---
+export async function getPlayerNames(playerIds) {
+    if (!playerIds || playerIds.length === 0) return {};
+    const { data, error } = await supabase
+        .from('players')
+        .select('id, username')
+        .in('id', playerIds);
+    if (error) throw error;
+    const names = {};
+    data.forEach(p => { names[p.id] = p.username; });
+    return names;
+}
+
+// --- Запустить игру (хост) ---
 export async function startGame(roomId, hostId) {
     const { data: room, error: fetchError } = await supabase
         .from('rooms')

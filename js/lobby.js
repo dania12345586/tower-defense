@@ -1,26 +1,18 @@
 import { 
     createRoom, getWaitingRooms, joinRoom, kickPlayer, leaveRoom, 
-    voteMap, getVotesWithNames, subscribeToVotes, startGame, subscribeToRoom, unsubscribeFromRoom
+    voteMap, getVotes, subscribeToVotes, startGame, subscribeToRoom, unsubscribeFromRoom,
+    getPlayerNames
 } from './multiplayer.js';
 import { supabase, getCurrentUser } from './auth.js';
 
+// --- Глобальные переменные ---
 let currentRoomId = null;
 let currentUserId = null;
 let isHost = false;
 let roomData = null;
 let votesChannel = null;
+let roomChannel = null;
 const MAX_TOWERS = 4;
-
-// Получение имени пользователя по ID
-async function getUsername(userId) {
-    const { data, error } = await supabase
-        .from('players')
-        .select('username')
-        .eq('id', userId)
-        .single();
-    if (error) return userId.slice(0,6);
-    return data.username;
-}
 
 // --- Рендер списка комнат ---
 export async function renderRoomList() {
@@ -29,20 +21,19 @@ export async function renderRoomList() {
     try {
         const rooms = await getWaitingRooms();
         container.innerHTML = rooms.length === 0 ? '<p>Нет доступных комнат. Создайте свою!</p>' : '';
-        for (const room of rooms) {
+        rooms.forEach(room => {
             const div = document.createElement('div');
             div.className = 'room-item';
             div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:8px;';
             const playerCount = (room.players || []).length;
-            const hostName = await getUsername(room.host_id);
             div.innerHTML = `
-                <span>Комната #${room.id.slice(0,6)} (${playerCount} игроков) - Хост: ${hostName}</span>
+                <span>Комната #${room.id.slice(0,6)} (${playerCount} игроков) - карта: ${room.map}</span>
                 <button class="btn join-room-btn" data-roomid="${room.id}" style="padding:4px 12px;">Присоединиться</button>
             `;
             container.appendChild(div);
-        }
+        });
         document.querySelectorAll('.join-room-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', async (e) => {
                 const roomId = btn.dataset.roomid;
                 await joinRoomHandler(roomId);
             });
@@ -88,48 +79,56 @@ async function openLobby(room) {
     document.getElementById('roomListModal').style.display = 'none';
     document.getElementById('lobbyModal').style.display = 'flex';
     roomData = room;
-    renderLobby(room);
-    subscribeToRoom(room.id, (updatedRoom) => {
+    
+    // Подписываемся на обновления комнаты
+    if (roomChannel) supabase.removeChannel(roomChannel);
+    roomChannel = subscribeToRoom(room.id, (updatedRoom) => {
         roomData = updatedRoom;
         renderLobby(updatedRoom);
     });
+    
+    // Подписываемся на голоса
     if (votesChannel) supabase.removeChannel(votesChannel);
     votesChannel = subscribeToVotes(room.id, () => {
-        renderLobby(roomData);
+        // Обновляем только результаты голосования
+        updateVotesDisplay(room.id);
     });
+    
+    renderLobby(room);
 }
 
 // --- Рендер лобби ---
 async function renderLobby(room) {
     const container = document.getElementById('lobbyContent');
     if (!container) return;
+    
     const players = room.players || [];
     const hostId = room.host_id;
     const userId = currentUserId;
     const isHostUser = (userId === hostId);
-
+    
     // Получаем имена игроков
-    const playerNames = {};
-    for (const id of players) {
-        playerNames[id] = await getUsername(id);
+    let playerNames = {};
+    if (players.length > 0) {
+        try {
+            playerNames = await getPlayerNames(players);
+        } catch (e) {
+            console.warn('Не удалось получить имена:', e);
+        }
     }
-    const hostName = playerNames[hostId] || hostId.slice(0,6);
-    const userName = playerNames[userId] || userId.slice(0,6);
-
-    // Текущий выбор башен
-    let selectedTowers = window._selectedTowers || ['pistol', 'flame', 'dj'];
 
     let html = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h3>Лобби (${players.length} игроков)</h3>
-            <span style="color:#888; font-size:0.9rem;">Хост: ${hostName}</span>
+            <span style="color:#888; font-size:0.9rem;">Хост: ${playerNames[hostId] || hostId.slice(0,6)}</span>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
     `;
+    
     players.forEach(id => {
         const isYou = (id === userId);
-        const canKick = isHostUser && !isYou && players.length > 1;
         const name = playerNames[id] || id.slice(0,6);
+        const canKick = isHostUser && !isYou && players.length > 1;
         html += `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px; background:rgba(255,255,255,0.05); border-radius:6px;">
                 <span>${isYou ? '🌟 ' : ''} ${name} ${isYou ? ' (Вы)' : ''} ${id === hostId ? '👑' : ''}</span>
@@ -148,6 +147,8 @@ async function renderLobby(room) {
         electric: '⚡ Электрошокер',
         laser: '🔴 Лазер'
     };
+    let selectedTowers = window._selectedTowers || ['pistol', 'flame', 'dj'];
+    
     html += `
         <div style="margin-bottom:16px;">
             <h4>Выберите башни (макс. ${MAX_TOWERS})</h4>
@@ -193,8 +194,8 @@ async function renderLobby(room) {
 
     container.innerHTML = html;
 
-    // --- Обработчики ---
-
+    // --- Привязка обработчиков ---
+    
     // Выбор башен
     document.querySelectorAll('.lobby-tower-checkbox').forEach(cb => {
         cb.addEventListener('change', function() {
@@ -216,6 +217,7 @@ async function renderLobby(room) {
             const map = btn.dataset.map;
             try {
                 await voteMap(room.id, userId, map);
+                // Обновим голоса после отправки
                 updateVotesDisplay(room.id);
             } catch (e) {
                 alert('Ошибка голосования: ' + e.message);
@@ -230,6 +232,7 @@ async function renderLobby(room) {
             if (!confirm('Кикнуть игрока?')) return;
             try {
                 await kickPlayer(room.id, playerId, userId);
+                // Обновление придёт через Realtime
             } catch (e) {
                 alert('Ошибка кика: ' + e.message);
             }
@@ -242,8 +245,17 @@ async function renderLobby(room) {
         startBtn.addEventListener('click', async () => {
             try {
                 await startGame(room.id, userId);
-                // После старта, статус комнаты меняется, обновим лобби
-                alert('Игра запущена! (пока без синхронизации)');
+                // После успешного старта закроем лобби и откроем игру
+                // Пока просто сообщим
+                alert('Игра начинается! (синхронизация пока не реализована)');
+                closeLobby();
+                document.getElementById('gameContainer').style.display = 'flex';
+                // Запускаем игру локально (каждый игрок запускает свою копию)
+                window._isMultiplayer = true;
+                if (window.game) {
+                    window.game.selectedMap = room.map || 'default';
+                    window.game.startGame();
+                }
             } catch (e) {
                 alert('Ошибка старта: ' + e.message);
             }
@@ -253,29 +265,34 @@ async function renderLobby(room) {
     // Покинуть
     document.getElementById('leaveRoomBtn').addEventListener('click', async () => {
         try {
-            await leaveRoom(room.id, userId);
+            const result = await leaveRoom(room.id, userId);
             closeLobby();
-            document.getElementById('roomListModal').style.display = 'flex';
-            renderRoomList();
+            if (result && result.deleted) {
+                // Комната удалена, возвращаемся к списку
+                document.getElementById('roomListModal').style.display = 'flex';
+                renderRoomList();
+            } else {
+                // Просто вышли из комнаты
+                document.getElementById('roomListModal').style.display = 'flex';
+                renderRoomList();
+            }
         } catch (e) {
             alert('Ошибка выхода: ' + e.message);
         }
     });
 
-    updateVotesDisplay(room.id);
+    // Обновляем голоса
+    await updateVotesDisplay(room.id);
 }
 
-// --- Обновить голоса ---
+// --- Обновить отображение голосов ---
 async function updateVotesDisplay(roomId) {
     const container = document.getElementById('voteResults');
     if (!container) return;
     try {
-        const votes = await getVotesWithNames(roomId);
+        const votes = await getVotes(roomId);
         const voteCounts = {};
-        votes.forEach(v => { 
-            const name = v.username || v.player_id.slice(0,6);
-            voteCounts[v.map] = (voteCounts[v.map] || 0) + 1;
-        });
+        votes.forEach(v => { voteCounts[v.map] = (voteCounts[v.map] || 0) + 1; });
         const total = votes.length;
         let text = '';
         if (total === 0) {
@@ -288,13 +305,20 @@ async function updateVotesDisplay(roomId) {
         container.textContent = text;
     } catch (e) {
         console.error('Ошибка получения голосов:', e);
+        container.textContent = 'Ошибка загрузки голосов';
     }
 }
 
 // --- Закрыть лобби ---
 function closeLobby() {
     document.getElementById('lobbyModal').style.display = 'none';
-    unsubscribeFromRoom();
-    if (votesChannel) supabase.removeChannel(votesChannel);
+    if (roomChannel) {
+        supabase.removeChannel(roomChannel);
+        roomChannel = null;
+    }
+    if (votesChannel) {
+        supabase.removeChannel(votesChannel);
+        votesChannel = null;
+    }
     currentRoomId = null;
 }

@@ -224,6 +224,18 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     padding: 8px 20px;
     border-radius: 12px;
     margin-bottom: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.coin-icon {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 0 8px rgba(255,215,0,0.6));
+    animation: coinGlow 2s infinite alternate;
+}
+@keyframes coinGlow {
+    0% { filter: drop-shadow(0 0 4px rgba(255,215,0,0.3)); transform: scale(1); }
+    100% { filter: drop-shadow(0 0 16px rgba(255,215,0,0.9)); transform: scale(1.05); }
 }
 
 /* Отображение выбранных башен */

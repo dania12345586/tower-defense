@@ -26,26 +26,24 @@
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="menu-overlay" style="display: none;">
         <div class="menu-box menu-main">
-            <!-- Левая колонка: кнопка выбора башен + отображение выбранных -->
+            <!-- Левая колонка -->
             <div class="menu-column menu-column-left">
-                <button id="openTowerSelectBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">🏗️ Выбрать башни</button>
-                <div id="selectedTowersDisplay" style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
-                    <!-- Сюда будут вставляться иконки выбранных башен -->
-                </div>
+                <button id="openTowerSelectBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">🏗️ Выбрать башни (макс. 4)</button>
+                <div id="selectedTowersDisplay" style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; min-height:50px;"></div>
                 <div style="font-size:0.8rem; color:#888; margin-top:8px;">Нажмите, чтобы изменить набор</div>
             </div>
 
-            <!-- Центральная колонка: название и кнопка -->
+            <!-- Центр -->
             <div class="menu-column menu-column-center">
                 <h1 class="menu-title">🏰 Tower Defense</h1>
                 <div class="menu-coins">
-                    🪙 <span id="coinsDisplay">0</span>
+                    <span class="coin-icon">🪙</span> <span id="coinsDisplay">0</span>
                 </div>
                 <button id="startGameBtn" class="btn big-btn">▶ Играть</button>
                 <div style="margin-top:12px; font-size:0.8rem; color:#aaa;">Выберите башни слева</div>
             </div>
 
-            <!-- Правая колонка: магазин (заглушка) -->
+            <!-- Правая колонка -->
             <div class="menu-column menu-column-right">
                 <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🛒 Магазин</h2>
                 <button id="shopBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">В разработке</button>
@@ -54,10 +52,10 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА ВЫБОРА БАШЕН (отдельный экран) -->
+    <!-- МОДАЛКА ВЫБОРА БАШЕН -->
     <div id="towerSelectModal" class="menu-overlay" style="display: none; z-index: 200;">
         <div class="menu-box" style="max-width: 600px;">
-            <h2>Выберите башни</h2>
+            <h2>Выберите башни (макс. 4)</h2>
             <div class="tower-select-grid">
                 <label class="tower-card" data-tower="pistol">
                     <input type="checkbox" class="tower-checkbox" value="pistol" checked>
@@ -88,6 +86,7 @@
                 <button id="saveTowerSelectBtn" class="btn big-btn" style="background:#2ecc71;">Сохранить</button>
                 <button id="cancelTowerSelectBtn" class="btn big-btn" style="background:#e74c3c;">Отмена</button>
             </div>
+            <div id="towerSelectWarning" style="color: #ff6b6b; margin-top: 10px; min-height: 20px;"></div>
         </div>
     </div>
 

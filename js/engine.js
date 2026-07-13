@@ -451,7 +451,7 @@ export class GameEngine {
         if (type === 'flame') return 200;
         if (type === 'dj') return 280;
         if (type === 'electric') return 95;
-        if (type === 'laser') return 600;
+        if (type === 'laser') return 1000; // обновлено
         return 0;
     }
 
@@ -478,7 +478,7 @@ export class GameEngine {
             flame: { label: '🔥 Огнемёт', cost: 200 },
             dj: { label: '🎧 DJ', cost: 280 },
             electric: { label: '⚡ Электрошокер', cost: 95 },
-            laser: { label: '🔴 Лазер', cost: 600 }
+            laser: { label: '🔴 Лазер', cost: 1000 } // обновлено
         };
         for (const type of this.selectedTowers) {
             const cfg = configs[type];

@@ -174,7 +174,7 @@ function renderShopModal() {
 
     const shopItems = [
         { id: 'electric', label: '⚡ Электрошокер', cost: 150, unlocked: unlockedTowers.includes('electric') },
-        { id: 'laser', label: '🔴 Лазер', cost: 400, unlocked: unlockedTowers.includes('laser') }
+        { id: 'laser', label: '🔴 Лазер', cost: 400, unlocked: unlockedTowers.includes('laser') } // стоимость в монетах осталась 400
     ];
 
     shopItems.forEach(item => {

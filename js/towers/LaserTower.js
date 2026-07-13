@@ -61,13 +61,13 @@ export class LaserTower extends Tower {
     constructor(x, y) {
         super(x, y, 'laser');
         this.color = '#ff44ff';
-        // Базовые статы (из конфига)
-        this.baseDamage = 4;
+        // ----- НОВЫЙ БАЛАНС -----
+        this.baseDamage = 2;
         this.chargeRate = 2;
-        this.maxCharge = 15;
+        this.maxCharge = 4;           // начальный макс. заряд
         this.fireRate = 0.22;
         this.range = 220;
-        this.cost = 1000;
+        this.cost = 1000;             // стоимость установки
         this.upgradeCost = 700;
         // Состояние
         this.charge = 0;
@@ -84,15 +84,13 @@ export class LaserTower extends Tower {
     upgrade() {
         if (this.level >= this.maxLevel) return;
         this.level++;
-        // ----- МИКРО-АПГРЕЙДЫ (почти незаметные) -----
-        this.baseDamage += 0.2;           // +0.2 урона за уровень
-        this.chargeRate += 0.3;           // +0.3 к скорости зарядки
-        this.maxCharge += 1;              // +1 к максимуму заряда
-        this.range = Math.floor(this.range * 1.015); // +1.5% радиуса
-        // Скорость атаки НЕ МЕНЯЕТСЯ
+        // ----- ОЧЕНЬ СЛАБЫЕ АПГРЕЙДЫ -----
+        // Урон НЕ РАСТЁТ (остаётся 2)
+        this.chargeRate += 0.2;
+        this.maxCharge += 0.5;         // +0.5 за уровень → на 5 уровне будет 4 + 0.5*4 = 6
+        this.range = Math.floor(this.range * 1.01);
         this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
-        // Обновляем текущий урон (без баффов)
         this.damage = this.baseDamage;
         if (this.isBuffed) {
             this.damage = Math.floor(this.baseDamage * this.buffDamageMult);

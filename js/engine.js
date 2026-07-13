@@ -49,7 +49,6 @@ export class GameEngine {
         this.maxDjTowers = 1;
         this.shockerCount = 0;
         this.maxShockers = 3;
-        // Лимит для пистолетчиков
         this.pistolCount = 0;
         this.maxPistols = 4;
 
@@ -183,7 +182,6 @@ export class GameEngine {
     }
 
     init() {
-        // Инициализация выбранных башен из глобальной переменной
         this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj', 'electric'];
 
         const playBtn = document.getElementById('mapSelectPlayBtn');
@@ -218,8 +216,6 @@ export class GameEngine {
             });
         }
 
-        // Обработчик админ-панели добавлен в adminPanel.js (удалён дублирующий код)
-
         this.canvas.addEventListener('click', (e) => {
             const pos = this.getPointerPos(e);
             this.handleClick(pos.x, pos.y);
@@ -253,7 +249,6 @@ export class GameEngine {
         this.userId = window._userId;
         this.username = window._username;
 
-        // Показываем кнопку админ-панели только для "данечка"
         if (this.username === 'данечка') {
             this.toggleAdminBtn.style.display = 'inline-block';
         } else {
@@ -262,7 +257,6 @@ export class GameEngine {
             this.toggleAdminBtn.textContent = 'Админ-панель';
         }
 
-        // Загружаем монеты и разблокировки
         if (this.userId) {
             try {
                 const progress = await loadProgress(this.userId);
@@ -277,7 +271,6 @@ export class GameEngine {
             }
         }
 
-        // Всегда стартуем с 1-й волны и 120 золотом
         this.gold = 120;
         this.waveIndex = 0;
         this.wave = 1;
@@ -288,7 +281,6 @@ export class GameEngine {
         this.isFirstWave = true;
         this.menuButtonCreated = false;
 
-        // Берём башни из глобальной переменной
         this.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj', 'electric'];
 
         this.map = new GameMap(this.canvas.width, this.canvas.height, 40, this.selectedMap);
@@ -473,6 +465,7 @@ export class GameEngine {
         }
     }
 
+    // ===== ИСПРАВЛЕННЫЙ МЕТОД =====
     updateShopUI() {
         this.shopItems.innerHTML = '';
         const configs = {
@@ -481,7 +474,8 @@ export class GameEngine {
             dj: { label: '🎧 DJ', cost: 280 },
             electric: { label: '⚡ Электрошокер', cost: 95 }
         };
-        for (const type of ['pistol', 'flame', 'dj', 'electric']) {
+        // Показываем только те башни, которые выбраны в меню
+        for (const type of this.selectedTowers) {
             const cfg = configs[type];
             if (!cfg) continue;
             const el = document.createElement('div');
@@ -498,7 +492,13 @@ export class GameEngine {
         this.shopHint.textContent = this.selectedTowerType ? `Выбрано: ${this.selectedTowerType}` : 'Кликните по иконке для выбора';
     }
 
+    // ===== ИСПРАВЛЕННЫЙ МЕТОД =====
     selectTowerType(type) {
+        // Проверяем, что башня выбрана в меню
+        if (!this.selectedTowers.includes(type)) {
+            this.shopHint.textContent = 'Эта башня не выбрана в меню!';
+            return;
+        }
         if (this.selectedTowerType === type) {
             this.selectedTowerType = null;
         } else {
@@ -518,6 +518,12 @@ export class GameEngine {
         if (this.gameOver || this.victory) return;
 
         if (this.selectedTowerType) {
+            // Дополнительная проверка – если тип не выбран в меню, сбросить
+            if (!this.selectedTowers.includes(this.selectedTowerType)) {
+                this.selectedTowerType = null;
+                this.updateShopUI();
+                return;
+            }
             const { gridX, gridY } = this.map.pixelToGrid(x, y);
             if (this.map.canBuildAt(gridX, gridY)) {
                 const cost = this.getTowerCost(this.selectedTowerType);
@@ -622,7 +628,6 @@ export class GameEngine {
             const key = `${tower.gridX},${tower.gridY}`;
             this.map.occupiedCells.delete(key);
         }
-        // Уменьшаем счётчики при продаже
         if (tower.type === 'pistol') this.pistolCount--;
         else if (tower.type === 'flame') this.flameTowerCount--;
         else if (tower.type === 'dj') this.djTowerCount--;

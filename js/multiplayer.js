@@ -32,6 +32,7 @@ export function unsubscribeFromRoom() {
 }
 
 export async function createRoom(hostId, map = 'default') {
+    console.log('Создание комнаты:', hostId, map);
     const { data, error } = await supabase
         .from('rooms')
         .insert({
@@ -46,23 +47,13 @@ export async function createRoom(hostId, map = 'default') {
 }
 
 export async function getWaitingRooms() {
-    // Получаем все комнаты со статусом 'waiting'
     const { data, error } = await supabase
         .from('rooms')
         .select('*')
         .eq('status', 'waiting')
         .order('created_at', { ascending: false });
     if (error) throw error;
-    
-    // Удаляем пустые комнаты
-    const toDelete = data.filter(room => !room.players || room.players.length === 0);
-    for (const room of toDelete) {
-        await supabase.from('rooms').delete().eq('id', room.id);
-        console.log('Удалена пустая комната:', room.id);
-    }
-    
-    // Возвращаем только комнаты с игроками
-    return data.filter(room => room.players && room.players.length > 0);
+    return data;
 }
 
 export async function joinRoom(roomId, userId) {
@@ -142,6 +133,7 @@ export async function leaveRoom(roomId, userId) {
 }
 
 export async function voteMap(roomId, playerId, map) {
+    console.log('Голосование:', roomId, playerId, map);
     const { error: delError } = await supabase
         .from('room_votes')
         .delete()
@@ -193,15 +185,6 @@ export async function getPlayerNames(playerIds) {
     const names = {};
     data.forEach(p => { names[p.id] = p.username; });
     return names;
-}
-
-export async function updateRoomMap(roomId, map) {
-    const { error } = await supabase
-        .from('rooms')
-        .update({ map })
-        .eq('id', roomId);
-    if (error) throw error;
-    return true;
 }
 
 export async function startGame(roomId, hostId) {

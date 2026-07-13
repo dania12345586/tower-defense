@@ -2,6 +2,7 @@ import { GameEngine } from './engine.js';
 import { register, login, getCurrentUser, setCurrentUser, clearCurrentUser, loadProgress, saveProgress } from './auth.js';
 import { initAdminPanel } from './adminPanel.js';
 import { createRoomHandler, renderRoomList } from './lobby.js';
+import { initSync, sendAction, updateGameState, unsubscribeSync } from './sync.js';
 
 // ... остальной код без изменений
 

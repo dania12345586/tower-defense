@@ -6,6 +6,7 @@ import { TOWER_TYPES } from './configs/towerConfig.js';
 import { getSelectedTowers } from './ui/menu.js';
 import { updateTowerPanel } from './ui/towerPanel.js';
 import { loadProgress, saveProgress } from './auth.js';
+import { initSync, sendAction, updateGameState, unsubscribeSync, getGameState } from './sync.js';
 
 export class GameEngine {
     constructor() {
@@ -95,6 +96,12 @@ export class GameEngine {
         this.music = {};
         this.currentMusic = null;
         this.loadMusic();
+
+        this.isMultiplayer = false;
+        this.syncEnabled = false;
+        this.myPlayerId = null;
+        this.roomId = null;
+        this.isHost = false;
 
         this.init();
     }
@@ -275,10 +282,31 @@ export class GameEngine {
         }
 
         // ----- МУЛЬТИПЛЕЕРНАЯ НАСТРОЙКА -----
-        if (window._isMultiplayer) {
-            this.gold = 80;  // стартовое золото меньше
-            // Здесь будет логика увеличения врагов и другие мультиплеерные настройки
-            console.log('Запущена мультиплеерная игра!');
+        this.isMultiplayer = window._isMultiplayer || false;
+        if (this.isMultiplayer) {
+            this.roomId = window._multiplayerRoomId;
+            this.myPlayerId = this.userId;
+            this.selectedMap = window._multiplayerMap || 'default';
+            this.isHost = window._isHost || false;
+            this.syncEnabled = true;
+
+            // Инициализируем синхронизацию
+            initSync(this.roomId, this.myPlayerId, this.isHost, (newState) => {
+                this.applyGameState(newState);
+            });
+
+            // Если не хост – загружаем состояние
+            if (!this.isHost) {
+                try {
+                    const state = await getGameState(this.roomId);
+                    if (state) this.applyGameState(state);
+                } catch (e) {
+                    console.warn('Не удалось загрузить состояние:', e);
+                }
+            }
+
+            // Стартовое золото 80 (уже установлено в sync.js)
+            this.gold = 80;
         } else {
             this.gold = 120;
         }
@@ -317,6 +345,64 @@ export class GameEngine {
         this.updateUI();
         this.lastTime = performance.now();
         this.gameLoop();
+    }
+
+    // Применение состояния от хоста
+    applyGameState(state) {
+        if (!state) return;
+        console.log('🔄 Применение состояния от хоста:', state);
+        // Синхронизируем волны, врагов, башни
+        this.wave = state.wave || 1;
+        this.waveIndex = state.wave_index || 0;
+        this.selectedMap = state.map || 'default';
+        
+        // Синхронизируем башни
+        // (пока пропускаем, чтобы не перекрывать локальные изменения)
+        // В будущем здесь будет полная синхронизация башен и врагов
+    }
+
+    // Обработка действий от других игроков
+    handleAction(action) {
+        if (!this.syncEnabled) return;
+        console.log('⚡ Обработка действия:', action);
+        const { action_type, player_id, data } = action;
+        
+        if (player_id === this.myPlayerId) return; // игнорируем свои действия
+        
+        switch (action_type) {
+            case 'build_tower':
+                this.buildTowerFromSync(data);
+                break;
+            case 'upgrade_tower':
+                this.upgradeTowerFromSync(data);
+                break;
+            case 'sell_tower':
+                this.sellTowerFromSync(data);
+                break;
+            case 'damage_enemy':
+                this.damageEnemyFromSync(data);
+                break;
+            default:
+                console.warn('Неизвестное действие:', action_type);
+        }
+    }
+
+    buildTowerFromSync(data) {
+        // Воссоздаём башню у других игроков
+        console.log('🏗️ Синхронизация постройки башни:', data);
+        // Пока пропускаем, реализуем позже
+    }
+
+    upgradeTowerFromSync(data) {
+        console.log('⬆️ Синхронизация апгрейда башни:', data);
+    }
+
+    sellTowerFromSync(data) {
+        console.log('💰 Синхронизация продажи башни:', data);
+    }
+
+    damageEnemyFromSync(data) {
+        console.log('💥 Синхронизация урона врагу:', data);
     }
 
     gameLoop() {
@@ -582,6 +668,17 @@ export class GameEngine {
                     this.map.occupyCell(gridX, gridY);
                     this.gold -= cost;
                     this.updateUI();
+
+                    // Отправляем действие в мультиплеере
+                    if (this.syncEnabled) {
+                        sendAction('build_tower', {
+                            type: this.selectedTowerType,
+                            x: tx, y: ty,
+                            gridX, gridY,
+                            level: tower.level,
+                            cost: cost
+                        });
+                    }
                 } else {
                     this.shopHint.textContent = 'Недостаточно золота!';
                 }
@@ -635,6 +732,13 @@ export class GameEngine {
         this.selectedTower.upgrade();
         this.updateTowerPanel();
         this.updateUI();
+
+        if (this.syncEnabled) {
+            sendAction('upgrade_tower', {
+                towerId: this.selectedTower.id || Math.random(),
+                level: this.selectedTower.level
+            });
+        }
     }
 
     sellTower(tower, price) {
@@ -657,6 +761,10 @@ export class GameEngine {
         }
         this.updateUI();
         this.updateShopUI();
+
+        if (this.syncEnabled) {
+            sendAction('sell_tower', { towerId: tower.id || Math.random() });
+        }
     }
 
     startWave() {
@@ -680,9 +788,8 @@ export class GameEngine {
             if (this.selectedMap === 'volcano') {
                 count *= 2;
             }
-            // В мультиплеере увеличиваем количество врагов
-            if (window._isMultiplayer && this.waveIndex > 3) {
-                count = Math.floor(count * 1.2); // +20% на некоторых волнах
+            if (this.isMultiplayer && this.waveIndex > 3) {
+                count = Math.floor(count * 1.2);
             }
             this.enemiesToSpawn += count;
             this.waveGroups.push({ type: g.type, count: count });
@@ -713,8 +820,7 @@ export class GameEngine {
         } else {
             enemy = createEnemy(path, enemyType);
         }
-        // В мультиплеере увеличиваем здоровье и скорость
-        if (window._isMultiplayer) {
+        if (this.isMultiplayer) {
             enemy.hp = Math.floor(enemy.hp * 1.5);
             enemy.maxHp = enemy.hp;
             enemy.speed = Math.floor(enemy.speed * 1.1);
@@ -732,8 +838,7 @@ export class GameEngine {
         this.waveIndex++;
         this.wave++;
         const bonus = 15 + this.wave * 3;
-        // В мультиплеере меньше бонус
-        const finalBonus = window._isMultiplayer ? Math.floor(bonus * 0.7) : bonus;
+        const finalBonus = this.isMultiplayer ? Math.floor(bonus * 0.7) : bonus;
         this.gold += finalBonus;
         this.score += 20;
         this.updateUI();

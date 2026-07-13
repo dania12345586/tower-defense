@@ -77,5 +77,5 @@ export const TOWER_TYPES = {
     }
 };
 
-export const UPGRADE_COST_MULTIPLIER = 1.6,
+export const UPGRADE_COST_MULTIPLIER = 1.6;
 export const MAX_TOWER_LEVEL = 5;

@@ -1,5 +1,6 @@
 import { GameEngine } from './engine.js';
 import { register, login, getCurrentUser, setCurrentUser, clearCurrentUser } from './auth.js';
+import { initAdminPanel } from './adminPanel.js';
 
 const authScreen = document.getElementById('authScreen');
 const mainMenu = document.getElementById('mainMenu');
@@ -12,6 +13,7 @@ const authMessage = document.getElementById('authMessage');
 function startGameEngine() {
     if (!window.game) {
         window.game = new GameEngine();
+        initAdminPanel(); // инициализируем админ-панель после создания игры
     }
 }
 

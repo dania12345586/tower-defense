@@ -64,9 +64,9 @@ export const TOWER_TYPES = {
     },
     laser: {
         range: 220,
-        damage: 5,
-        fireRate: 0.15,
-        cost: 600,
+        damage: 4,
+        fireRate: 0.22,
+        cost: 1000,
         upgradeCost: 700,
         color: '#ff44ff',
         maxLevel: 5,

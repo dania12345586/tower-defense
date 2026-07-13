@@ -61,22 +61,21 @@ export class LaserTower extends Tower {
     constructor(x, y) {
         super(x, y, 'laser');
         this.color = '#ff44ff';
-        // НОВЫЙ БАЛАНС
-        this.baseDamage = 5;
-        this.chargeRate = 2;          // +2 урона в секунду
-        this.maxCharge = 15;           // максимальный бонус
-        this.fireRate = 0.15;          // 0.15 сек между атаками
-        // Остальное
+        // Базовые статы (из конфига)
+        this.baseDamage = 4;
+        this.chargeRate = 2;
+        this.maxCharge = 15;
+        this.fireRate = 0.22;
+        this.range = 220;
+        this.cost = 1000;
+        this.upgradeCost = 700;
+        // Состояние
         this.charge = 0;
         this.currentTarget = null;
         this.chargeTimer = 0;
         this.beam = null;
-        this.range = 220;
-        this.damage = 5;
-        this.cost = 600;
-        this.upgradeCost = 400;
         this.maxLevel = 5;
-        this.totalCost = 600;
+        this.totalCost = 1000;
         this.totalDamage = 0;
         this.shootFlash = 0;
         this.particles = [];
@@ -85,14 +84,16 @@ export class LaserTower extends Tower {
     upgrade() {
         if (this.level >= this.maxLevel) return;
         this.level++;
-        // Увеличение характеристик с каждым уровнем
-        this.baseDamage = Math.floor(this.baseDamage * 1.25);
-        this.chargeRate += 1.5;
-        this.maxCharge += 5;
-        this.range = Math.floor(this.range * 1.07);
-        this.fireRate = Math.max(0.08, this.fireRate * 0.95);
-        this.upgradeCost = Math.floor(this.upgradeCost * 1.5);
+        // ----- НОВЫЙ МЯГКИЙ АПГРЕЙД -----
+        this.baseDamage += 0.5;           // +0.5 урона за уровень
+        this.chargeRate += 1;             // +1 к скорости зарядки
+        this.maxCharge += 3;              // +3 к максимуму заряда
+        // Радиус растёт медленно
+        this.range = Math.floor(this.range * 1.05);
+        // Скорость атаки не меняется (остаётся 0.22)
+        this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
+        // Обновляем текущий урон (без баффов)
         this.damage = this.baseDamage;
         if (this.isBuffed) {
             this.damage = Math.floor(this.baseDamage * this.buffDamageMult);

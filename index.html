@@ -164,6 +164,8 @@
                 <button id="adminSetSpeed" class="btn">Установить</button>
                 <button id="adminClearAll" class="btn" style="background:#e74c3c;">🧹 Очистить всё</button>
             </div>
+
+            <!-- БЛОК СПАВНА ВРАГОВ (с вулканическим мега-боссом) -->
             <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
                 <h4 style="color:#ffd700; margin:5px 0;">🧟 Спавн врага</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
@@ -185,6 +187,7 @@
                             <option value="berserker">berserker</option>
                             <option value="plague">plague</option>
                             <option value="megaboss">megaboss</option>
+                            <option value="megaboss_volcano">megaboss_volcano (вулкан)</option>
                         </select>
                     </label>
                     <label>HP: <input type="number" id="adminSpawnHp" value="" style="width:60px;" placeholder="по умолч."></label>
@@ -194,6 +197,18 @@
                     <button id="adminSpawnBtn" class="btn" style="background:#2ecc71;">Создать</button>
                     <button id="adminSpawnMultipleBtn" class="btn" style="background:#3498db;">Создать 5</button>
                 </div>
+            </div>
+
+            <!-- НОВЫЙ БЛОК: РЕДАКТОР СТАТОВ БАШНИ -->
+            <div style="margin-top:15px; border-top:1px solid #555; padding-top:10px;">
+                <h4 style="color:#ffd700; margin:5px 0;">⚙️ Редактор башни</h4>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                    <label>Урон: <input type="number" id="editTowerDamage" value="10" style="width:70px;"></label>
+                    <label>Дальность: <input type="number" id="editTowerRange" value="150" style="width:70px;"></label>
+                    <label>Скорость: <input type="number" id="editTowerFireRate" value="1.0" step="0.1" style="width:70px;"></label>
+                    <button id="applyTowerStatsBtn" class="btn" style="background:#f39c12;">Применить к выбранной</button>
+                </div>
+                <div style="font-size:0.75rem; color:#888; margin-top:4px;">Выберите башню на карте, затем измените статы</div>
             </div>
         </div>
 

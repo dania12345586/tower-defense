@@ -1,18 +1,13 @@
+import { ENEMY_TYPES } from './configs/waveConfig.js';
 import { createEnemy } from './enemy.js';
+import { Megaboss } from './enemy.js';
 
 export function initAdminPanel() {
-    console.log('✅ initAdminPanel вызвана');
-
     const panel = document.getElementById('adminPanel');
     const toggleBtn = document.getElementById('toggleAdminPanel');
 
-    if (!panel || !toggleBtn) {
-        console.error('❌ Элементы админ-панели не найдены!');
-        return;
-    }
-
+    // ---- СТАРЫЕ ОБРАБОТЧИКИ ----
     toggleBtn.addEventListener('click', () => {
-        console.log('🔘 Кнопка админки нажата');
         const isHidden = panel.style.display === 'none';
         panel.style.display = isHidden ? 'block' : 'none';
         toggleBtn.textContent = isHidden ? 'Скрыть админку' : 'Админ-панель';
@@ -20,20 +15,14 @@ export function initAdminPanel() {
 
     document.getElementById('adminAddGold').addEventListener('click', () => {
         const amount = parseInt(document.getElementById('adminGoldAmount').value) || 100;
-        if (window.game) {
-            window.game.gold += amount;
-            window.game.updateUI();
-            console.log(`➕ Добавлено ${amount} золота`);
-        }
+        if (window.game) window.game.gold += amount;
+        if (window.game) window.game.updateUI();
     });
 
     document.getElementById('adminAddLives').addEventListener('click', () => {
         const amount = parseInt(document.getElementById('adminLivesAmount').value) || 5;
-        if (window.game) {
-            window.game.lives += amount;
-            window.game.updateUI();
-            console.log(`❤️ Добавлено ${amount} жизней`);
-        }
+        if (window.game) window.game.lives += amount;
+        if (window.game) window.game.updateUI();
     });
 
     document.getElementById('adminKillEnemies').addEventListener('click', () => {
@@ -42,7 +31,6 @@ export function initAdminPanel() {
                 e.hp = 0;
                 e.isDead = true;
             }
-            console.log('💀 Все враги убиты');
         }
     });
 
@@ -52,15 +40,11 @@ export function initAdminPanel() {
             window.game.waveIndex = wave - 1;
             window.game.wave = wave;
             window.game.updateUI();
-            console.log(`🌊 Установлена волна ${wave}`);
         }
     });
 
     document.getElementById('adminStartWave').addEventListener('click', () => {
-        if (window.game) {
-            window.game.startWave();
-            console.log('▶️ Старт волны');
-        }
+        if (window.game) window.game.startWave();
     });
 
     document.getElementById('adminFinishWave').addEventListener('click', () => {
@@ -72,7 +56,6 @@ export function initAdminPanel() {
             window.game.enemies = [];
             window.game.waveInProgress = false;
             window.game.endWave();
-            console.log('🏁 Волна завершена принудительно');
         }
     });
 
@@ -81,7 +64,6 @@ export function initAdminPanel() {
         if (window.game) {
             window.game.timeScale = speed;
             window.game.speedBtn.textContent = `Скорость: ${speed}x`;
-            console.log(`⚡ Скорость установлена: ${speed}x`);
         }
     });
 
@@ -91,10 +73,10 @@ export function initAdminPanel() {
             window.game.enemies = [];
             window.game.bullets = [];
             if (window.game.map) window.game.map.occupiedCells = new Set();
-            console.log('🧹 Всё очищено');
         }
     });
 
+    // ---- НОВЫЙ БЛОК: СПАВН ВРАГОВ (с поддержкой вулканического босса) ----
     document.getElementById('adminSpawnBtn').addEventListener('click', () => {
         spawnEnemy(1);
     });
@@ -120,7 +102,14 @@ export function initAdminPanel() {
         }
 
         for (let i = 0; i < count; i++) {
-            const enemy = createEnemy(path, type);
+            let enemy;
+            if (type === 'megaboss_volcano') {
+                enemy = new Megaboss(path, true); // isVolcano = true
+            } else if (type === 'megaboss') {
+                enemy = new Megaboss(path, false);
+            } else {
+                enemy = createEnemy(path, type);
+            }
             if (hpInput !== '') enemy.hp = parseFloat(hpInput);
             if (speedInput !== '') enemy.speed = parseFloat(speedInput);
             if (rewardInput !== '') enemy.reward = parseFloat(rewardInput);
@@ -131,5 +120,30 @@ export function initAdminPanel() {
         console.log(`🧟 Создано ${count} врагов типа ${type}`);
     }
 
+    // ---- НОВЫЙ БЛОК: РЕДАКТОР СТАТОВ БАШНИ ----
+    document.getElementById('applyTowerStatsBtn').addEventListener('click', () => {
+        if (!window.game || !window.game.selectedTower) {
+            alert('❌ Сначала выберите башню на карте (кликните по ней)!');
+            return;
+        }
+        const tower = window.game.selectedTower;
+        const damage = parseFloat(document.getElementById('editTowerDamage').value);
+        const range = parseFloat(document.getElementById('editTowerRange').value);
+        const fireRate = parseFloat(document.getElementById('editTowerFireRate').value);
+
+        if (!isNaN(damage) && damage > 0) tower.damage = damage;
+        if (!isNaN(range) && range > 0) tower.range = range;
+        if (!isNaN(fireRate) && fireRate > 0) tower.fireRate = fireRate;
+
+        // Если у башни есть baseDamage (для корректного отображения после апгрейдов) – тоже меняем
+        if (tower.baseDamage !== undefined && !isNaN(damage) && damage > 0) tower.baseDamage = damage;
+        if (tower.baseFireRate !== undefined && !isNaN(fireRate) && fireRate > 0) tower.baseFireRate = fireRate;
+
+        // Обновить панель информации
+        window.game.updateTowerPanel();
+        console.log('✅ Статы башни изменены!');
+    });
+
+    // Панель по умолчанию скрыта
     panel.style.display = 'none';
 }

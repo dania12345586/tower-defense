@@ -2,6 +2,7 @@ import {
     createRoom, getWaitingRooms, joinRoom, kickPlayer, leaveRoom, 
     voteMap, getVotes, subscribeToVotes, startGame, subscribeToRoom, unsubscribeFromRoom
 } from './multiplayer.js';
+import { getCurrentUser } from './auth.js';
 
 // --- Глобальные переменные ---
 let currentRoomId = null;
@@ -9,6 +10,7 @@ let currentUserId = null;
 let isHost = false;
 let roomData = null;
 let votesChannel = null;
+let selectedTowers = ['pistol', 'flame', 'dj']; // временно для лобби
 
 // --- Рендер списка комнат ---
 export async function renderRoomList() {
@@ -60,7 +62,6 @@ export async function createRoomHandler() {
     try {
         const user = getCurrentUser();
         if (!user) throw new Error('Пользователь не авторизован');
-        // Получаем выбранную карту (по умолчанию default)
         const map = 'default';
         const room = await createRoom(user.id, map);
         currentRoomId = room.id;
@@ -74,20 +75,17 @@ export async function createRoomHandler() {
 
 // --- Открыть лобби ---
 async function openLobby(room) {
-    // Скрываем список комнат, показываем лобби
     document.getElementById('roomListModal').style.display = 'none';
     document.getElementById('lobbyModal').style.display = 'flex';
     roomData = room;
     renderLobby(room);
-    // Подписываемся на обновления комнаты
     subscribeToRoom(room.id, (updatedRoom) => {
         roomData = updatedRoom;
         renderLobby(updatedRoom);
     });
-    // Подписываемся на голоса
     if (votesChannel) supabase.removeChannel(votesChannel);
     votesChannel = subscribeToVotes(room.id, () => {
-        renderLobby(roomData); // обновляем голоса
+        renderLobby(roomData);
     });
 }
 
@@ -119,7 +117,7 @@ function renderLobby(room) {
     });
     html += `</div>`;
 
-    // Выбор башен (слева, но в модалке делаем компактно)
+    // Выбор башен
     html += `
         <div style="margin-bottom:16px;">
             <h4>Выберите башни (макс. 4)</h4>
@@ -134,12 +132,12 @@ function renderLobby(room) {
         </div>
     `;
 
-    // Карта (если голосование активно)
+    // Голосование за карту
     if (room.status === 'waiting') {
         html += `
             <div style="margin-bottom:16px;">
                 <h4>Голосование за карту</h4>
-                <div style="display:flex; gap:12px;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
                     <button class="btn vote-map-btn" data-map="default">🏙️ Город</button>
                     <button class="btn vote-map-btn" data-map="forest">🌲 Лес</button>
                     <button class="btn vote-map-btn" data-map="lunar">🌙 Луна</button>
@@ -152,7 +150,6 @@ function renderLobby(room) {
         `;
     }
 
-    // Кнопки управления
     if (isHostUser && room.status === 'waiting') {
         html += `
             <button id="startGameBtnLobby" class="btn big-btn" style="background:#2ecc71;">Начать игру</button>
@@ -165,23 +162,19 @@ function renderLobby(room) {
     container.innerHTML = html;
 
     // Обработчики
-    // Выбор башен
     document.querySelectorAll('.lobby-tower-checkbox').forEach(cb => {
         cb.addEventListener('change', () => {
-            // Сохраняем выбор в глобальную переменную (как в сингле)
             const checked = document.querySelectorAll('.lobby-tower-checkbox:checked');
-            window._selectedTowers = Array.from(checked).map(c => c.value);
-            // Можно обновить рендер, но не перерисовывать весь лобби
+            selectedTowers = Array.from(checked).map(c => c.value);
+            window._selectedTowers = selectedTowers;
         });
     });
 
-    // Голосование
     document.querySelectorAll('.vote-map-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const map = btn.dataset.map;
             try {
                 await voteMap(room.id, userId, map);
-                // Обновим отображение голосов
                 updateVotesDisplay(room.id);
             } catch (e) {
                 alert('Ошибка голосования: ' + e.message);
@@ -189,35 +182,29 @@ function renderLobby(room) {
         });
     });
 
-    // Кик
     document.querySelectorAll('.kick-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const playerId = btn.dataset.playerid;
             if (!confirm('Кикнуть игрока?')) return;
             try {
                 await kickPlayer(room.id, playerId, userId);
-                // обновление придёт через Realtime
             } catch (e) {
                 alert('Ошибка кика: ' + e.message);
             }
         });
     });
 
-    // Начать игру
     const startBtn = document.getElementById('startGameBtnLobby');
     if (startBtn) {
         startBtn.addEventListener('click', async () => {
             try {
                 await startGame(room.id, userId);
-                // После этого статус комнаты станет 'playing', начнётся голосование и таймер
-                // Но мы будем обрабатывать это через подписку
             } catch (e) {
                 alert('Ошибка старта: ' + e.message);
             }
         });
     }
 
-    // Покинуть
     document.getElementById('leaveRoomBtn').addEventListener('click', async () => {
         try {
             await leaveRoom(room.id, userId);
@@ -229,11 +216,9 @@ function renderLobby(room) {
         }
     });
 
-    // Обновить голоса
     updateVotesDisplay(room.id);
 }
 
-// --- Обновить отображение голосов ---
 async function updateVotesDisplay(roomId) {
     const container = document.getElementById('voteResults');
     if (!container) return;
@@ -252,7 +237,6 @@ async function updateVotesDisplay(roomId) {
     }
 }
 
-// --- Закрыть лобби ---
 function closeLobby() {
     document.getElementById('lobbyModal').style.display = 'none';
     unsubscribeFromRoom();

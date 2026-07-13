@@ -1,4 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { getCurrentUser } from './auth.js';
 
 const supabaseUrl = 'https://rrqtouhbhpzxpqfuldlv.supabase.co';
 const supabaseKey = 'sb_publishable__0FWveft58VYiS35xKbxxw_EXAlrLwX';
@@ -115,7 +116,6 @@ export async function leaveRoom(roomId, userId) {
         .single();
     if (fetchError) throw fetchError;
     let players = (room.players || []).filter(id => id !== userId);
-    // Если хост уходит – передаём хоста первому в списке
     let newHostId = room.host_id;
     if (room.host_id === userId && players.length > 0) {
         newHostId = players[0];
@@ -128,7 +128,6 @@ export async function leaveRoom(roomId, userId) {
         .single();
     if (error) throw error;
     if (players.length === 0) {
-        // Удаляем комнату, если пуста
         await supabase.from('rooms').delete().eq('id', roomId);
     }
     return data;
@@ -136,7 +135,6 @@ export async function leaveRoom(roomId, userId) {
 
 // Голосование за карту
 export async function voteMap(roomId, playerId, map) {
-    // Удаляем старый голос, если был
     await supabase.from('room_votes').delete().eq('room_id', roomId).eq('player_id', playerId);
     const { error } = await supabase
         .from('room_votes')

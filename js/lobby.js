@@ -1,16 +1,26 @@
 import { 
     createRoom, getWaitingRooms, joinRoom, kickPlayer, leaveRoom, 
-    voteMap, getVotes, subscribeToVotes, startGame, subscribeToRoom, unsubscribeFromRoom
+    voteMap, getVotesWithNames, subscribeToVotes, startGame, subscribeToRoom, unsubscribeFromRoom
 } from './multiplayer.js';
 import { supabase, getCurrentUser } from './auth.js';
 
-// --- Глобальные переменные ---
 let currentRoomId = null;
 let currentUserId = null;
 let isHost = false;
 let roomData = null;
 let votesChannel = null;
 const MAX_TOWERS = 4;
+
+// Получение имени пользователя по ID
+async function getUsername(userId) {
+    const { data, error } = await supabase
+        .from('players')
+        .select('username')
+        .eq('id', userId)
+        .single();
+    if (error) return userId.slice(0,6);
+    return data.username;
+}
 
 // --- Рендер списка комнат ---
 export async function renderRoomList() {
@@ -19,19 +29,20 @@ export async function renderRoomList() {
     try {
         const rooms = await getWaitingRooms();
         container.innerHTML = rooms.length === 0 ? '<p>Нет доступных комнат. Создайте свою!</p>' : '';
-        rooms.forEach(room => {
+        for (const room of rooms) {
             const div = document.createElement('div');
             div.className = 'room-item';
             div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:8px;';
             const playerCount = (room.players || []).length;
+            const hostName = await getUsername(room.host_id);
             div.innerHTML = `
-                <span>Комната #${room.id.slice(0,6)} (${playerCount} игроков) - карта: ${room.map}</span>
+                <span>Комната #${room.id.slice(0,6)} (${playerCount} игроков) - Хост: ${hostName}</span>
                 <button class="btn join-room-btn" data-roomid="${room.id}" style="padding:4px 12px;">Присоединиться</button>
             `;
             container.appendChild(div);
-        });
+        }
         document.querySelectorAll('.join-room-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+            btn.addEventListener('click', async () => {
                 const roomId = btn.dataset.roomid;
                 await joinRoomHandler(roomId);
             });
@@ -89,7 +100,7 @@ async function openLobby(room) {
 }
 
 // --- Рендер лобби ---
-function renderLobby(room) {
+async function renderLobby(room) {
     const container = document.getElementById('lobbyContent');
     if (!container) return;
     const players = room.players || [];
@@ -97,29 +108,38 @@ function renderLobby(room) {
     const userId = currentUserId;
     const isHostUser = (userId === hostId);
 
-    // Текущий выбор башен (получаем из глобальной переменной)
+    // Получаем имена игроков
+    const playerNames = {};
+    for (const id of players) {
+        playerNames[id] = await getUsername(id);
+    }
+    const hostName = playerNames[hostId] || hostId.slice(0,6);
+    const userName = playerNames[userId] || userId.slice(0,6);
+
+    // Текущий выбор башен
     let selectedTowers = window._selectedTowers || ['pistol', 'flame', 'dj'];
 
     let html = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h3>Лобби (${players.length} игроков)</h3>
-            <span style="color:#888; font-size:0.9rem;">Хост: ${hostId.slice(0,6)}</span>
+            <span style="color:#888; font-size:0.9rem;">Хост: ${hostName}</span>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
     `;
     players.forEach(id => {
         const isYou = (id === userId);
         const canKick = isHostUser && !isYou && players.length > 1;
+        const name = playerNames[id] || id.slice(0,6);
         html += `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px; background:rgba(255,255,255,0.05); border-radius:6px;">
-                <span>${isYou ? '🌟 ' : ''} ${id.slice(0,6)} ${isYou ? ' (Вы)' : ''} ${id === hostId ? '👑' : ''}</span>
+                <span>${isYou ? '🌟 ' : ''} ${name} ${isYou ? ' (Вы)' : ''} ${id === hostId ? '👑' : ''}</span>
                 ${canKick ? `<button class="btn kick-btn" data-playerid="${id}" style="padding:2px 8px; background:#e74c3c;">✕</button>` : ''}
             </div>
         `;
     });
     html += `</div>`;
 
-    // Выбор башен (с ограничением 4)
+    // Выбор башен
     const allTowerTypes = ['pistol', 'flame', 'dj', 'electric', 'laser'];
     const towerLabels = {
         pistol: '🔫 Пистолетчик',
@@ -175,7 +195,7 @@ function renderLobby(room) {
 
     // --- Обработчики ---
 
-    // Выбор башен с ограничением
+    // Выбор башен
     document.querySelectorAll('.lobby-tower-checkbox').forEach(cb => {
         cb.addEventListener('change', function() {
             const checked = document.querySelectorAll('.lobby-tower-checkbox:checked');
@@ -222,6 +242,8 @@ function renderLobby(room) {
         startBtn.addEventListener('click', async () => {
             try {
                 await startGame(room.id, userId);
+                // После старта, статус комнаты меняется, обновим лобби
+                alert('Игра запущена! (пока без синхронизации)');
             } catch (e) {
                 alert('Ошибка старта: ' + e.message);
             }
@@ -248,15 +270,22 @@ async function updateVotesDisplay(roomId) {
     const container = document.getElementById('voteResults');
     if (!container) return;
     try {
-        const votes = await getVotes(roomId);
+        const votes = await getVotesWithNames(roomId);
         const voteCounts = {};
-        votes.forEach(v => { voteCounts[v.map] = (voteCounts[v.map] || 0) + 1; });
+        votes.forEach(v => { 
+            const name = v.username || v.player_id.slice(0,6);
+            voteCounts[v.map] = (voteCounts[v.map] || 0) + 1;
+        });
         const total = votes.length;
         let text = '';
-        for (const [map, count] of Object.entries(voteCounts)) {
-            text += `${map}: ${count} голос${count>1?'ов':'а'} (${Math.round(count/total*100)}%)  `;
+        if (total === 0) {
+            text = 'Нет голосов';
+        } else {
+            for (const [map, count] of Object.entries(voteCounts)) {
+                text += `${map}: ${count} голос${count>1?'ов':'а'} (${Math.round(count/total*100)}%)  `;
+            }
         }
-        container.textContent = text || 'Нет голосов';
+        container.textContent = text;
     } catch (e) {
         console.error('Ошибка получения голосов:', e);
     }

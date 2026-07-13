@@ -2,7 +2,6 @@ import { supabase } from './auth.js';
 
 let currentRoomId = null;
 let currentChannel = null;
-let roomCallbacks = {};
 
 // Подписка на изменения в комнате
 export function subscribeToRoom(roomId, onUpdate) {
@@ -24,7 +23,6 @@ export function subscribeToRoom(roomId, onUpdate) {
     return currentChannel;
 }
 
-// Отписаться
 export function unsubscribeFromRoom() {
     if (currentChannel) {
         supabase.removeChannel(currentChannel);
@@ -128,9 +126,16 @@ export async function leaveRoom(roomId, userId) {
     return data;
 }
 
-// Голосование за карту
+// Голосование за карту (с удалением старого голоса)
 export async function voteMap(roomId, playerId, map) {
-    await supabase.from('room_votes').delete().eq('room_id', roomId).eq('player_id', playerId);
+    // Удаляем старый голос, если он есть
+    await supabase
+        .from('room_votes')
+        .delete()
+        .eq('room_id', roomId)
+        .eq('player_id', playerId);
+    
+    // Вставляем новый голос
     const { error } = await supabase
         .from('room_votes')
         .insert({ room_id: roomId, player_id: playerId, map });
@@ -138,14 +143,30 @@ export async function voteMap(roomId, playerId, map) {
     return true;
 }
 
-// Получить текущие голоса
-export async function getVotes(roomId) {
-    const { data, error } = await supabase
+// Получить текущие голоса с именами игроков
+export async function getVotesWithNames(roomId) {
+    const { data: votes, error } = await supabase
         .from('room_votes')
-        .select('*')
+        .select('player_id, map')
         .eq('room_id', roomId);
     if (error) throw error;
-    return data;
+    
+    // Получаем имена игроков
+    const playerIds = votes.map(v => v.player_id);
+    if (playerIds.length === 0) return [];
+    const { data: players, error: playersError } = await supabase
+        .from('players')
+        .select('id, username')
+        .in('id', playerIds);
+    if (playersError) throw playersError;
+    
+    const playerMap = {};
+    players.forEach(p => { playerMap[p.id] = p.username; });
+    
+    return votes.map(v => ({
+        ...v,
+        username: playerMap[v.player_id] || v.player_id.slice(0,6)
+    }));
 }
 
 // Подписка на голоса

@@ -60,7 +60,6 @@ export class GameEngine {
         this.userId = null;
         this.username = null;
 
-        // Награды за карты (в монетах)
         this.coinRewards = {
             'default': 25,
             'forest': 25,
@@ -73,7 +72,6 @@ export class GameEngine {
         this.goldEl = document.getElementById('gold');
         this.livesEl = document.getElementById('lives');
         this.waveEl = document.getElementById('wave');
-        this.coinsGameEl = document.getElementById('coinsGame');
         this.coinsDisplayEl = document.getElementById('coinsDisplay');
         this.speedBtn = document.getElementById('speedBtn');
         this.towerPanel = document.getElementById('towerPanel');
@@ -217,7 +215,7 @@ export class GameEngine {
             });
         }
 
-        // Админ-панель – обработчик клика
+        // АДМИН-ПАНЕЛЬ: обработчик клика
         this.toggleAdminBtn.addEventListener('click', () => {
             const panel = document.getElementById('adminPanel');
             if (panel.style.display === 'none') {
@@ -262,22 +260,31 @@ export class GameEngine {
         this.userId = window._userId;
         this.username = window._username;
 
+        // Загружаем ТОЛЬКО монеты и разблокированные башни (НЕ золото и НЕ волны)
         if (this.userId) {
             try {
                 const progress = await loadProgress(this.userId);
                 if (progress) {
-                    this.gold = progress.gold || 120;
                     this.coins = progress.coins || 0;
                     this.unlockedTowers = progress.unlocked_towers || ['pistol', 'flame', 'dj', 'electric'];
-                    this.waveIndex = progress.completed_waves || 0;
-                    this.wave = this.waveIndex + 1;
                     this.achievements = progress.achievements || [];
-                    console.log('Прогресс загружен:', this.gold, this.coins, this.wave, this.unlockedTowers);
+                    console.log('Загружены монеты:', this.coins);
                 }
             } catch (e) {
-                console.warn('Не удалось загрузить прогресс:', e);
+                console.warn('Не удалось загрузить монеты:', e);
             }
         }
+
+        // Всегда стартуем с 1-й волны и 120 золотом
+        this.gold = 120;
+        this.waveIndex = 0;
+        this.wave = 1;
+        this.lives = 20;
+        this.score = 0;
+        this.gameOver = false;
+        this.victory = false;
+        this.isFirstWave = true;
+        this.menuButtonCreated = false;
 
         // Все башни доступны
         this.selectedTowers = ['pistol', 'flame', 'dj', 'electric'];
@@ -287,6 +294,9 @@ export class GameEngine {
             this.toggleAdminBtn.style.display = 'inline-block';
         } else {
             this.toggleAdminBtn.style.display = 'none';
+            // Скрываем админ-панель, если она была открыта
+            document.getElementById('adminPanel').style.display = 'none';
+            this.toggleAdminBtn.textContent = 'Админ-панель';
         }
 
         this.map = new GameMap(this.canvas.width, this.canvas.height, 40, this.selectedMap);
@@ -299,18 +309,6 @@ export class GameEngine {
         this.enemies = [];
         this.towers = [];
         this.bullets = [];
-        this.lives = 20;
-        this.score = 0;
-        this.gameOver = false;
-        this.victory = false;
-        this.isFirstWave = true;
-        this.menuButtonCreated = false;
-
-        // Фикс: золото должно быть 120, а не 167
-        // Убедимся, что gold = 120 (если прогресс не перезаписал)
-        if (!this.userId) {
-            this.gold = 120;
-        }
 
         if (this.startWaveBtn) {
             this.startWaveBtn.style.display = 'inline-block';
@@ -370,7 +368,6 @@ export class GameEngine {
                     this.gameEnded = true;
                     this.stopMusic();
                     this.showMenuButton();
-                    this.saveGameProgress();
                 }
                 this.updateUI();
             }
@@ -471,7 +468,6 @@ export class GameEngine {
         this.goldEl.textContent = `💰 Gold: ${this.gold}`;
         this.livesEl.textContent = `❤️ Lives: ${this.lives}`;
         this.waveEl.textContent = `🌊 Wave: ${this.wave}`;
-        if (this.coinsGameEl) this.coinsGameEl.textContent = `🪙 ${this.coins}`;
         if (this.coinsDisplayEl) this.coinsDisplayEl.textContent = this.coins;
 
         if (this.startWaveBtn) {
@@ -705,7 +701,6 @@ export class GameEngine {
 
         console.log(`Волна ${this.waveIndex} из ${WAVES.length} завершена. Текущая волна: ${this.wave}`);
 
-        // Проверяем, завершена ли последняя волна (победа)
         if (this.waveIndex >= WAVES.length) {
             console.log('Все волны пройдены! Победа!');
             this.victory = true;
@@ -717,7 +712,9 @@ export class GameEngine {
             this.coins += reward;
             console.log(`Начислено монет: ${reward} за карту ${this.selectedMap}`);
 
-            await this.saveGameProgress();
+            // Сохраняем монеты в базу
+            await this.saveCoins();
+
             this.showMenuButton();
             this.updateUI();
             return;
@@ -734,22 +731,21 @@ export class GameEngine {
         }, 1500);
     }
 
-    async saveGameProgress() {
+    // Сохраняем ТОЛЬКО монеты и разблокированные башни (без прогресса катки)
+    async saveCoins() {
         if (!this.userId) {
             console.warn('Нет userId, сохранение невозможно');
             return;
         }
         try {
             await saveProgress(this.userId, {
-                gold: this.gold,
                 coins: this.coins,
                 unlocked_towers: this.unlockedTowers,
-                completed_waves: this.waveIndex,
                 achievements: this.achievements
             });
-            console.log('Прогресс сохранён:', this.gold, this.coins, this.waveIndex);
+            console.log('Монеты сохранены:', this.coins);
         } catch (e) {
-            console.warn('Не удалось сохранить прогресс:', e);
+            console.warn('Не удалось сохранить монеты:', e);
         }
     }
 
@@ -776,7 +772,7 @@ export class GameEngine {
         menuBtn.style.boxShadow = '0 0 40px rgba(102, 126, 234, 0.6)';
         menuBtn.addEventListener('click', async () => {
             this.stopMusic();
-            await this.saveGameProgress();
+            await this.saveCoins(); // сохраняем монеты перед выходом
             location.reload();
         });
         document.body.appendChild(menuBtn);

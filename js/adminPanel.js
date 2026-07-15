@@ -15,19 +15,23 @@ export function initAdminPanel() {
 
     document.getElementById('adminAddGold').addEventListener('click', () => {
         const amount = parseInt(document.getElementById('adminGoldAmount').value) || 100;
-        if (window.game) window.game.gold += amount;
-        if (window.game) window.game.updateUI();
+        if (window.game) {
+            window.game.state.gold += amount;
+            window.game.ui.updateUI(window.game.state);
+        }
     });
 
     document.getElementById('adminAddLives').addEventListener('click', () => {
         const amount = parseInt(document.getElementById('adminLivesAmount').value) || 5;
-        if (window.game) window.game.lives += amount;
-        if (window.game) window.game.updateUI();
+        if (window.game) {
+            window.game.state.lives += amount;
+            window.game.ui.updateUI(window.game.state);
+        }
     });
 
     document.getElementById('adminKillEnemies').addEventListener('click', () => {
         if (window.game) {
-            for (const e of window.game.enemies) {
+            for (const e of window.game.state.enemies) {
                 e.hp = 0;
                 e.isDead = true;
             }
@@ -37,46 +41,49 @@ export function initAdminPanel() {
     document.getElementById('adminSetWave').addEventListener('click', () => {
         const wave = parseInt(document.getElementById('adminWaveNumber').value) || 1;
         if (window.game) {
-            window.game.waveIndex = wave - 1;
-            window.game.wave = wave;
-            window.game.updateUI();
+            window.game.state.waveIndex = wave - 1;
+            window.game.state.wave = wave;
+            window.game.ui.updateUI(window.game.state);
         }
     });
 
     document.getElementById('adminStartWave').addEventListener('click', () => {
-        if (window.game) window.game.startWave();
+        if (window.game) window.game.waveManager?.startWave();
     });
 
     document.getElementById('adminFinishWave').addEventListener('click', () => {
         if (window.game) {
-            for (const e of window.game.enemies) {
+            for (const e of window.game.state.enemies) {
                 e.hp = 0;
                 e.isDead = true;
             }
-            window.game.enemies = [];
-            window.game.waveInProgress = false;
-            window.game.endWave();
+            window.game.state.enemies = [];
+            if (window.game.waveManager) {
+                window.game.waveManager.waveInProgress = false;
+                window.game.waveManager.endWave();
+            }
         }
     });
 
     document.getElementById('adminSetSpeed').addEventListener('click', () => {
         const speed = parseInt(document.getElementById('adminSpeedValue').value) || 1;
         if (window.game) {
-            window.game.timeScale = speed;
+            window.game.state.timeScale = speed;
             window.game.speedBtn.textContent = `Скорость: ${speed}x`;
         }
     });
 
     document.getElementById('adminClearAll').addEventListener('click', () => {
         if (window.game && confirm('Удалить все башни и врагов?')) {
-            window.game.towers = [];
-            window.game.enemies = [];
-            window.game.bullets = [];
+            window.game.state.towers = [];
+            window.game.state.enemies = [];
+            window.game.state.bullets = [];
             if (window.game.map) window.game.map.occupiedCells = new Set();
+            window.game.ui.updateUI(window.game.state);
         }
     });
 
-    // ---- НОВЫЙ БЛОК: СПАВН ВРАГОВ (с поддержкой вулканического босса) ----
+    // ---- НОВЫЙ БЛОК: СПАВН ВРАГОВ ----
     document.getElementById('adminSpawnBtn').addEventListener('click', () => {
         spawnEnemy(1);
     });
@@ -95,7 +102,7 @@ export function initAdminPanel() {
         const rewardInput = document.getElementById('adminSpawnReward').value;
         const damageInput = document.getElementById('adminSpawnDamage').value;
 
-        const path = window.game.map.paths[0];
+        const path = window.game.map?.paths?.[0];
         if (!path) {
             console.warn('⚠️ Нет пути для спавна');
             return;
@@ -104,7 +111,7 @@ export function initAdminPanel() {
         for (let i = 0; i < count; i++) {
             let enemy;
             if (type === 'megaboss_volcano') {
-                enemy = new Megaboss(path, true); // isVolcano = true
+                enemy = new Megaboss(path, true);
             } else if (type === 'megaboss') {
                 enemy = new Megaboss(path, false);
             } else {
@@ -115,7 +122,7 @@ export function initAdminPanel() {
             if (rewardInput !== '') enemy.reward = parseFloat(rewardInput);
             if (damageInput !== '') enemy.damageToBase = parseFloat(damageInput);
             enemy.maxHp = enemy.hp;
-            window.game.enemies.push(enemy);
+            window.game.state.enemies.push(enemy);
         }
         console.log(`🧟 Создано ${count} врагов типа ${type}`);
     }
@@ -135,11 +142,9 @@ export function initAdminPanel() {
         if (!isNaN(range) && range > 0) tower.range = range;
         if (!isNaN(fireRate) && fireRate > 0) tower.fireRate = fireRate;
 
-        // Если у башни есть baseDamage (для корректного отображения после апгрейдов) – тоже меняем
         if (tower.baseDamage !== undefined && !isNaN(damage) && damage > 0) tower.baseDamage = damage;
         if (tower.baseFireRate !== undefined && !isNaN(fireRate) && fireRate > 0) tower.baseFireRate = fireRate;
 
-        // Обновить панель информации
         window.game.updateTowerPanel();
         console.log('✅ Статы башни изменены!');
     });

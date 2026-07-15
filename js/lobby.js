@@ -70,6 +70,26 @@ export async function createRoomHandler() {
     }
 }
 
+// --- Функция запуска игры у всех игроков ---
+function startGameForAll(room) {
+    console.log('🎮 Запуск игры для всех игроков, карта:', room.map);
+    // Закрываем лобби
+    closeLobby();
+    // Устанавливаем глобальные флаги
+    window._isMultiplayer = true;
+    window._multiplayerRoomId = room.id;
+    window._multiplayerMap = room.map || 'default';
+    window._isHost = (currentUserId === room.host_id);
+    window._selectedTowers = window._selectedTowers || ['pistol', 'flame', 'dj'];
+    // Показываем игровой контейнер
+    document.getElementById('gameContainer').style.display = 'flex';
+    // Запускаем игру
+    if (window.game) {
+        window.game.selectedMap = room.map || 'default';
+        window.game.startGame();
+    }
+}
+
 async function openLobby(room) {
     document.getElementById('roomListModal').style.display = 'none';
     document.getElementById('lobbyModal').style.display = 'flex';
@@ -79,6 +99,10 @@ async function openLobby(room) {
     roomChannel = subscribeToRoom(room.id, (updatedRoom) => {
         roomData = updatedRoom;
         renderLobby(updatedRoom);
+        // Если статус стал 'playing' – запускаем игру у всех
+        if (updatedRoom.status === 'playing') {
+            startGameForAll(updatedRoom);
+        }
     });
     
     if (votesChannel) supabase.removeChannel(votesChannel);
@@ -247,25 +271,18 @@ async function renderLobby(room) {
                     }
                 }
                 
-                // Обновляем карту в комнате
+                // Обновляем карту и статус комнаты
                 await supabase
                     .from('rooms')
                     .update({ map: selectedMap, status: 'playing' })
                     .eq('id', room.id);
                 
-                // Закрываем лобби и запускаем игру
-                closeLobby();
-                window._isMultiplayer = true;
-                window._multiplayerRoomId = room.id;
-                window._multiplayerMap = selectedMap;
-                window._isHost = isHostUser;
-                window._selectedTowers = window._selectedTowers || ['pistol', 'flame', 'dj'];
-                
-                document.getElementById('gameContainer').style.display = 'flex';
-                if (window.game) {
-                    window.game.selectedMap = selectedMap;
-                    window.game.startGame();
-                }
+                // Обновление статуса вызовет startGameForAll у всех через Realtime
+                // У хоста тоже сработает подписка, но у него уже сейчас закроется лобби
+                // Мы не закрываем лобби здесь, чтобы подписка сделала это за нас
+                // Но чтобы хост не ждал, можно сразу запустить локально
+                // Однако это приведёт к двойному запуску, поэтому лучше просто положиться на Realtime
+                console.log('✅ Хост инициировал старт игры, ждём обновления от Realtime...');
             } catch (e) {
                 alert('Ошибка старта игры: ' + e.message);
             }

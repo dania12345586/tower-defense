@@ -325,7 +325,6 @@ export class GameEngine {
         this.gameLoop();
     }
 
-    // Прокси-метод для adminPanel
     updateUI() {
         this.ui.updateUI(this.state);
         this.renderLeaderboard();

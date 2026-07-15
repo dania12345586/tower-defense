@@ -23,10 +23,9 @@ const ACHIEVEMENTS = {
         id: 'first_win',
         name: 'Первая победа',
         desc: 'Выиграйте свою первую игру',
-        reward: 'shotgun', // разблокирует дробовик
+        reward: 'shotgun',
         icon: '🏆'
     },
-    // Другие достижения можно добавить позже
 };
 
 document.getElementById('rememberMe').addEventListener('change', (e) => {
@@ -145,7 +144,6 @@ function renderShopModal() {
     const items = [
         { id: 'electric', label: '⚡ Электрошокер', cost: 150, unlocked: unlockedTowers.includes('electric') },
         { id: 'laser', label: '🔴 Лазер', cost: 400, unlocked: unlockedTowers.includes('laser') }
-        // Дробовик не продаётся в магазине, только достижение
     ];
     items.forEach(item => {
         const div = document.createElement('div');
@@ -222,21 +220,26 @@ function closeAchievementsModal() {
 window.checkAchievements = function(state) {
     if (!state || !state.userId) return;
     let newAchievements = [];
-    // Первая победа
     if (!achievements.includes('first_win')) {
         newAchievements.push('first_win');
     }
     if (newAchievements.length > 0) {
         achievements = [...achievements, ...newAchievements];
-        // Награды
         if (newAchievements.includes('first_win')) {
-            // Разблокируем дробовик
             if (!unlockedTowers.includes('shotgun')) {
                 unlockedTowers.push('shotgun');
+                // Автоматически добавляем дробовик в выбранные башни
+                if (selectedTowers.length < MAX_TOWERS) {
+                    selectedTowers.push('shotgun');
+                } else {
+                    // заменяем последнюю
+                    selectedTowers[selectedTowers.length - 1] = 'shotgun';
+                }
+                window._selectedTowers = selectedTowers;
+                renderSelectedTowers();
                 alert('🏆 Достижение разблокировано: Первая победа! Вы получили башню Дробовик!');
             }
         }
-        // Сохраняем
         if (userId) {
             saveProgress(userId, { coins, unlocked_towers: unlockedTowers, achievements }).catch(console.warn);
         }

@@ -37,6 +37,14 @@ export class TowerManager {
     build(type, tx, ty, gridX, gridY) {
         if (!this.canBuild(type)) return null;
         let tower;
+        const cost = this.state.getTowerCost(type);
+        // Списываем деньги
+        if (this.state.gold < cost) {
+            this.ui.showHint('Недостаточно золота!');
+            return null;
+        }
+        this.state.gold -= cost;
+
         switch(type) {
             case 'pistol':
                 tower = new Tower(tx, ty, 'pistol');
@@ -58,15 +66,17 @@ export class TowerManager {
                 tower = new LaserTower(tx, ty);
                 this.state.laserCount++;
                 break;
+            default:
+                return null;
         }
         tower.gridX = gridX;
         tower.gridY = gridY;
         this.state.towers.push(tower);
         this.map.occupyCell(gridX, gridY);
-        this.state.gold -= this.state.getTowerCost(type);
         this.ui.updateUI(this.state);
+
         if (this.state.syncEnabled) {
-            sendAction('build_tower', { type, x: tx, y: ty, gridX, gridY, level: tower.level, cost: this.state.getTowerCost(type) });
+            sendAction('build_tower', { type, x: tx, y: ty, gridX, gridY, level: tower.level, cost });
         }
         return tower;
     }

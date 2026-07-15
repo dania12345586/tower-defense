@@ -196,6 +196,7 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     padding: 30px;
     max-width: 900px;
     align-items: stretch;
+    position: relative;
 }
 
 .menu-column {
@@ -301,4 +302,21 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
 .shop-item-modal .btn {
     padding: 4px 16px;
     font-size: 0.9rem;
+}
+
+/* Кнопка выхода */
+#logoutBtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: #ff6b6b;
+    font-size: 1.8rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.2s;
+}
+#logoutBtn:hover {
+    transform: scale(1.2);
 }

@@ -149,7 +149,12 @@ export class GameEngine {
             });
         }
 
+        // ===== ТОЛЬКО ХОСТ МЕНЯЕТ СКОРОСТЬ =====
         this.speedBtn.addEventListener('click', () => {
+            if (this.state.isMultiplayer && !this.state.isHost) {
+                this.ui.showHint('Только хост может менять скорость!');
+                return;
+            }
             if (this.state.timeScale === 1) this.state.timeScale = 2;
             else if (this.state.timeScale === 2) this.state.timeScale = 3;
             else this.state.timeScale = 1;
@@ -193,7 +198,6 @@ export class GameEngine {
             }
         });
 
-        // Динамические обработчики для товаров в магазине
         document.addEventListener('click', (e) => {
             const item = e.target.closest('.shop-item');
             if (item && this.ui.shopItems) {
@@ -279,9 +283,14 @@ export class GameEngine {
         this.enemyManager = new EnemyManager(this.state, this.map, this.ui);
         this.waveManager = new WaveManager(this.state, this.enemyManager, this.ui);
 
-        this.startWaveBtn.style.display = 'inline-block';
-        this.startWaveBtn.disabled = false;
-        this.startWaveBtn.textContent = 'Start Wave';
+        // ===== ПОКАЗЫВАЕМ КНОПКУ СТАРТА ВОЛНЫ ТОЛЬКО ХОСТУ =====
+        if (this.state.isMultiplayer && !this.state.isHost) {
+            this.startWaveBtn.style.display = 'none';
+        } else {
+            this.startWaveBtn.style.display = 'inline-block';
+            this.startWaveBtn.disabled = false;
+            this.startWaveBtn.textContent = 'Start Wave';
+        }
 
         this.ui.renderShop(this.state);
         this.ui.updateUI(this.state);
@@ -298,7 +307,6 @@ export class GameEngine {
 
     handleAction(action) {
         console.log('⚡ Действие от другого игрока:', action);
-        // Здесь будет обработка действий (постройка, апгрейд и т.д.) в будущем
     }
 
     gameLoop() {
@@ -405,8 +413,6 @@ export class GameEngine {
         }
     }
 
-    // ---- Обработчики взаимодействия ----
-
     handleClick(x, y) {
         if (this.state.gameOver || this.state.victory) return;
 
@@ -419,15 +425,16 @@ export class GameEngine {
             const { gridX, gridY } = this.map.pixelToGrid(x, y);
             if (this.map.canBuildAt(gridX, gridY)) {
                 const cost = this.state.getTowerCost(this.selectedTowerType);
-                if (this.state.gold >= cost) {
-                    const { x: tx, y: ty } = this.map.gridToPixel(gridX, gridY);
-                    const tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
-                    if (tower) {
-                        this.state.gold -= cost;
-                        this.ui.updateUI(this.state);
-                    }
-                } else {
+                // ===== ПРОВЕРКА ДЕНЕГ ПЕРЕД ПОСТРОЙКОЙ =====
+                if (this.state.gold < cost) {
                     this.ui.showHint('Недостаточно золота!');
+                    return;
+                }
+                const { x: tx, y: ty } = this.map.gridToPixel(gridX, gridY);
+                // ===== СТРОИМ БАШНЮ (ВНУТРИ СПИШЕТСЯ ЗОЛОТО) =====
+                const tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                if (tower) {
+                    this.ui.updateUI(this.state);
                 }
             }
             return;
@@ -500,8 +507,6 @@ export class GameEngine {
         );
     }
 
-    // ---- Очистка мультиплеерной комнаты ----
-
     async cleanupMultiplayerRoom() {
         if (!this.state.isMultiplayer || !this.state.roomId) return;
         try {
@@ -522,8 +527,6 @@ export class GameEngine {
             console.warn('Ошибка очистки мультиплеерной комнаты:', e);
         }
     }
-
-    // ---- Сохранение монет и кнопка "В меню" ----
 
     async saveCoins() {
         if (!this.state.userId) {
@@ -571,6 +574,4 @@ export class GameEngine {
     }
 }
 
-window.addEventListener('load', () => {
-    // Игра создаётся в main.js
-});
+window.addEventListener('load', () => {});

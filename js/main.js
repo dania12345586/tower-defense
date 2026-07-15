@@ -2,9 +2,6 @@ import { GameEngine } from './engine.js';
 import { register, login, getCurrentUser, setCurrentUser, clearCurrentUser, loadProgress, saveProgress } from './auth.js';
 import { initAdminPanel } from './adminPanel.js';
 import { createRoomHandler, renderRoomList } from './lobby.js';
-import { initSync, sendAction, updateGameState, unsubscribeSync } from './sync.js';
-
-// ... остальной код без изменений
 
 const authScreen = document.getElementById('authScreen');
 const mainMenu = document.getElementById('mainMenu');
@@ -30,12 +27,8 @@ function startGameEngine() {
 // ----- ОБНОВЛЕНИЕ МОНЕТ -----
 function updateCoinsDisplay() {
     const coinsDisplay = document.getElementById('coinsDisplay');
-    if (coinsDisplay) {
-        coinsDisplay.textContent = coins;
-    }
-    if (window.game) {
-        window.game.coins = coins;
-    }
+    if (coinsDisplay) coinsDisplay.textContent = coins;
+    if (window.game) window.game.state.coins = coins;
     renderShopModal();
 }
 
@@ -48,13 +41,7 @@ function renderSelectedTowers() {
         container.innerHTML = '<span style="color:#888; font-size:0.9rem;">Ничего не выбрано</span>';
         return;
     }
-    const icons = {
-        pistol: '🔫',
-        flame: '🔥',
-        dj: '🎧',
-        electric: '⚡',
-        laser: '🔴'
-    };
+    const icons = { pistol: '🔫', flame: '🔥', dj: '🎧', electric: '⚡', laser: '🔴' };
     selectedTowers.forEach(type => {
         const span = document.createElement('span');
         span.className = 'selected-tower-icon';
@@ -66,14 +53,9 @@ function renderSelectedTowers() {
 
 // ----- ОБНОВЛЕНИЕ МОДАЛКИ ВЫБОРА БАШЕН -----
 function updateTowerSelectionModal() {
-    const cards = document.querySelectorAll('#towerSelectModal .tower-card');
-    cards.forEach(card => {
+    document.querySelectorAll('#towerSelectModal .tower-card').forEach(card => {
         const type = card.dataset.tower;
-        if (unlockedTowers.includes(type)) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
+        card.style.display = unlockedTowers.includes(type) ? 'flex' : 'none';
     });
     selectedTowers = selectedTowers.filter(t => unlockedTowers.includes(t));
     renderSelectedTowers();
@@ -81,52 +63,43 @@ function updateTowerSelectionModal() {
 }
 
 function updateModalState() {
-    const cards = document.querySelectorAll('#towerSelectModal .tower-card');
-    cards.forEach(card => {
+    document.querySelectorAll('#towerSelectModal .tower-card').forEach(card => {
         const type = card.dataset.tower;
-        if (selectedTowers.includes(type)) {
-            card.classList.add('selected');
-        } else {
-            card.classList.remove('selected');
-        }
-        if (unlockedTowers.includes(type)) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
+        card.classList.toggle('selected', selectedTowers.includes(type));
+        card.style.display = unlockedTowers.includes(type) ? 'flex' : 'none';
     });
 }
 
-// ----- МОДАЛКА ВЫБОРА -----
 function openTowerSelectModal() {
-    const modal = document.getElementById('towerSelectModal');
+    document.getElementById('towerSelectModal').style.display = 'flex';
     updateModalState();
     document.getElementById('towerSelectWarning').textContent = '';
-    modal.style.display = 'flex';
 }
+
 function closeTowerSelectModal() {
     document.getElementById('towerSelectModal').style.display = 'none';
 }
+
 function handleTowerCardClick(e) {
     const card = e.target.closest('.tower-card');
     if (!card) return;
     const type = card.dataset.tower;
-    if (!type) return;
-    if (!unlockedTowers.includes(type)) return;
+    if (!type || !unlockedTowers.includes(type)) return;
     if (selectedTowers.includes(type)) {
         selectedTowers = selectedTowers.filter(t => t !== type);
         card.classList.remove('selected');
         document.getElementById('towerSelectWarning').textContent = '';
-        return;
+    } else {
+        if (selectedTowers.length >= MAX_TOWERS) {
+            document.getElementById('towerSelectWarning').textContent = `❌ Нельзя выбрать больше ${MAX_TOWERS} башен!`;
+            return;
+        }
+        selectedTowers.push(type);
+        card.classList.add('selected');
+        document.getElementById('towerSelectWarning').textContent = '';
     }
-    if (selectedTowers.length >= MAX_TOWERS) {
-        document.getElementById('towerSelectWarning').textContent = `❌ Нельзя выбрать больше ${MAX_TOWERS} башен!`;
-        return;
-    }
-    selectedTowers.push(type);
-    card.classList.add('selected');
-    document.getElementById('towerSelectWarning').textContent = '';
 }
+
 function saveTowerSelection() {
     if (selectedTowers.length === 0) {
         document.getElementById('towerSelectWarning').textContent = '❌ Выберите хотя бы одну башню!';
@@ -136,13 +109,9 @@ function saveTowerSelection() {
     renderSelectedTowers();
     closeTowerSelectModal();
 }
+
 function cancelTowerSelection() {
-    if (window._selectedTowers) {
-        selectedTowers = [...window._selectedTowers];
-    } else {
-        selectedTowers = ['pistol', 'flame', 'dj'];
-    }
-    selectedTowers = selectedTowers.filter(t => unlockedTowers.includes(t));
+    selectedTowers = (window._selectedTowers || ['pistol', 'flame', 'dj']).filter(t => unlockedTowers.includes(t));
     updateModalState();
     renderSelectedTowers();
     closeTowerSelectModal();
@@ -150,9 +119,8 @@ function cancelTowerSelection() {
 
 // ----- МАГАЗИН -----
 function openShopModal() {
-    const modal = document.getElementById('shopModal');
+    document.getElementById('shopModal').style.display = 'flex';
     renderShopModal();
-    modal.style.display = 'flex';
 }
 function closeShopModal() {
     document.getElementById('shopModal').style.display = 'none';
@@ -161,18 +129,15 @@ function renderShopModal() {
     const container = document.getElementById('shopItemsContainer');
     if (!container) return;
     container.innerHTML = '';
-    const shopItems = [
+    const items = [
         { id: 'electric', label: '⚡ Электрошокер', cost: 150, unlocked: unlockedTowers.includes('electric') },
         { id: 'laser', label: '🔴 Лазер', cost: 400, unlocked: unlockedTowers.includes('laser') }
     ];
-    shopItems.forEach(item => {
+    items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'shop-item-modal';
         div.style.cssText = 'background:rgba(255,255,255,0.05); border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center; border:1px solid #444;';
-        div.innerHTML = `
-            <span style="font-size:1.1rem;">${item.label}</span>
-            <span style="color:#aaa;">${item.cost}🪙</span>
-        `;
+        div.innerHTML = `<span style="font-size:1.1rem;">${item.label}</span><span style="color:#aaa;">${item.cost}🪙</span>`;
         if (item.unlocked) {
             const bought = document.createElement('span');
             bought.textContent = ' ✅ Куплено';
@@ -192,31 +157,18 @@ function renderShopModal() {
         }
         container.appendChild(div);
     });
-    const coinDisplay = document.getElementById('shopCoinsDisplay');
-    if (coinDisplay) coinDisplay.textContent = coins;
+    document.getElementById('shopCoinsDisplay').textContent = coins;
 }
+
 async function buyItem(itemId, cost) {
-    if (coins < cost) {
-        alert('Недостаточно монет!');
-        return;
-    }
-    if (unlockedTowers.includes(itemId)) {
-        alert('Уже куплено!');
-        return;
-    }
+    if (coins < cost) { alert('Недостаточно монет!'); return; }
+    if (unlockedTowers.includes(itemId)) { alert('Уже куплено!'); return; }
     coins -= cost;
     unlockedTowers.push(itemId);
     if (userId) {
         try {
-            await saveProgress(userId, {
-                coins: coins,
-                unlocked_towers: unlockedTowers,
-                achievements: window.game ? window.game.achievements : []
-            });
-            console.log('Покупка сохранена');
-        } catch (e) {
-            console.warn('Ошибка сохранения покупки:', e);
-        }
+            await saveProgress(userId, { coins, unlocked_towers: unlockedTowers, achievements: window.game?.state.achievements || [] });
+        } catch (e) { console.warn(e); }
     }
     updateCoinsDisplay();
     renderShopModal();
@@ -231,7 +183,6 @@ async function loadUserData() {
     userId = savedUser.id;
     window._userId = userId;
     window._username = savedUser.username;
-
     try {
         const progress = await loadProgress(userId);
         if (progress) {
@@ -241,10 +192,7 @@ async function loadUserData() {
             if (selectedTowers.length === 0) selectedTowers = ['pistol'];
             window._selectedTowers = selectedTowers;
         }
-    } catch (e) {
-        console.warn('Не удалось загрузить данные:', e);
-    }
-
+    } catch (e) { console.warn(e); }
     authScreen.style.display = 'none';
     mainMenu.style.display = 'flex';
     startGameEngine();
@@ -255,52 +203,44 @@ async function loadUserData() {
 
 // ----- АВТОРИЗАЦИЯ -----
 const savedUser = getCurrentUser();
-if (savedUser) {
-    loadUserData();
-} else {
-    clearCurrentUser();
-}
+if (savedUser) loadUserData();
+else clearCurrentUser();
 
 document.getElementById('authRegisterBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
-    if (!username || !password) {
-        authMessage.textContent = 'Заполните все поля!';
-        return;
-    }
+    if (!username || !password) { authMessage.textContent = 'Заполните все поля!'; return; }
     try {
         await register(username, password);
         authMessage.style.color = '#00ff88';
         authMessage.textContent = '✅ Регистрация успешна! Теперь войдите.';
         document.getElementById('authUsername').value = '';
         document.getElementById('authPassword').value = '';
-    } catch (e) {
-        authMessage.textContent = '❌ ' + e.message;
-    }
+    } catch (e) { authMessage.textContent = '❌ ' + e.message; }
 });
 
 document.getElementById('authLoginBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
-    if (!username || !password) {
-        authMessage.textContent = 'Введите имя и пароль!';
-        return;
-    }
+    if (!username || !password) { authMessage.textContent = 'Введите имя и пароль!'; return; }
     try {
         const user = await login(username, password);
         setCurrentUser(user);
         loadUserData();
-    } catch (e) {
-        authMessage.textContent = '❌ ' + e.message;
+    } catch (e) { authMessage.textContent = '❌ ' + e.message; }
+});
+
+// ----- КНОПКА ВЫХОДА -----
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    if (confirm('Выйти из аккаунта?')) {
+        clearCurrentUser();
+        location.reload();
     }
 });
 
 // ----- КНОПКИ МЕНЮ -----
 document.getElementById('startGameBtn').addEventListener('click', () => {
-    if (selectedTowers.length === 0) {
-        alert('Выберите хотя бы одну башню!');
-        return;
-    }
+    if (selectedTowers.length === 0) { alert('Выберите хотя бы одну башню!'); return; }
     window._selectedTowers = selectedTowers;
     window._isMultiplayer = false;
     mainMenu.style.display = 'none';
@@ -309,29 +249,23 @@ document.getElementById('startGameBtn').addEventListener('click', () => {
 
 document.getElementById('shopBtn').addEventListener('click', openShopModal);
 document.getElementById('closeShopBtn').addEventListener('click', closeShopModal);
-document.getElementById('shopModal').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeShopModal();
-});
+document.getElementById('shopModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeShopModal(); });
 
 document.getElementById('openTowerSelectBtn').addEventListener('click', openTowerSelectModal);
 document.getElementById('saveTowerSelectBtn').addEventListener('click', saveTowerSelection);
 document.getElementById('cancelTowerSelectBtn').addEventListener('click', cancelTowerSelection);
-document.getElementById('towerSelectModal').addEventListener('click', handleTowerCardClick);
 document.getElementById('towerSelectModal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) cancelTowerSelection();
 });
+document.getElementById('towerSelectModal').addEventListener('click', handleTowerCardClick);
 
 // ----- МУЛЬТИПЛЕЕР -----
 document.getElementById('multiplayerBtn').addEventListener('click', () => {
     const user = getCurrentUser();
-    if (!user) {
-        alert('Войдите в аккаунт!');
-        return;
-    }
+    if (!user) { alert('Войдите в аккаунт!'); return; }
     document.getElementById('roomListModal').style.display = 'flex';
     renderRoomList();
 });
-
 document.getElementById('createRoomBtn').addEventListener('click', createRoomHandler);
 document.getElementById('closeRoomListBtn').addEventListener('click', () => {
     document.getElementById('roomListModal').style.display = 'none';

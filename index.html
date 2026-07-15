@@ -25,7 +25,10 @@
 
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="menu-overlay" style="display: none;">
-        <div class="menu-box menu-main">
+        <div class="menu-box menu-main" style="position:relative;">
+            <!-- Кнопка выхода -->
+            <button id="logoutBtn" style="position:absolute; top:10px; right:10px; background:transparent; border:none; color:#ff6b6b; font-size:1.8rem; cursor:pointer; z-index:10; transition:transform 0.2s;" title="Выйти из аккаунта">🚪</button>
+
             <!-- Левая колонка -->
             <div class="menu-column menu-column-left">
                 <button id="openTowerSelectBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">🏗️ Выбрать башни (макс. 4)</button>
@@ -44,7 +47,7 @@
                 <div style="margin-top:12px; font-size:0.8rem; color:#aaa;">Выберите башни слева</div>
             </div>
 
-            <!-- Правая колонка: МАГАЗИН -->
+            <!-- Правая колонка -->
             <div class="menu-column menu-column-right">
                 <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🛒 Магазин</h2>
                 <button id="shopBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">Открыть магазин</button>
@@ -61,9 +64,7 @@
                 <span style="font-size:1.2rem;">Ваши монеты:</span>
                 <span style="font-size:1.5rem; color:#ffd700;">🪙 <span id="shopCoinsDisplay">0</span></span>
             </div>
-            <div id="shopItemsContainer" style="display:flex; flex-direction:column; gap:12px;">
-                <!-- Товары -->
-            </div>
+            <div id="shopItemsContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
             <button id="closeShopBtn" class="btn" style="margin-top:20px; background:#e74c3c;">Закрыть</button>
         </div>
     </div>
@@ -125,7 +126,7 @@
         </div>
     </div>
 
-    <!-- ВЫБОР КАРТ (для мультиплеера временно не используется) -->
+    <!-- ВЫБОР КАРТ -->
     <div id="mapSelectMenu" class="menu-overlay" style="display: none;">
         <div class="menu-box">
             <h2>Выберите карту</h2>

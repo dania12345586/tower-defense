@@ -74,7 +74,7 @@ export class ShotgunTower extends Tower {
         this.upgradeCost = 350;
         this.maxLevel = 5;
         this.totalCost = 250;
-        this.currentBurst = 0;           // сколько выстрелов сделано
+        this.currentBurst = 0;
         this.reloading = false;
         this.reloadTimer = 0;
         this.cooldown = 0;
@@ -105,28 +105,7 @@ export class ShotgunTower extends Tower {
             return;
         }
 
-        // ---- Поиск цели ----
-        if (this.target) {
-            if (!this.target.isAlive() || !this.isInRange(this.target)) {
-                this.target = null;
-                // НЕ СБРАСЫВАЕМ ПАТРОНЫ И НЕ ПРЕРЫВАЕМ ПЕРЕЗАРЯДКУ
-            }
-        }
-        if (!this.target) {
-            this.target = this.findTarget(enemies);
-            // При появлении новой цели НЕ СБРАСЫВАЕМ ПАТРОНЫ
-            // Просто продолжаем с текущим состоянием
-        }
-
-        // ---- Если цели нет – просто обновляем частицы ----
-        if (!this.target) {
-            if (this.particles) {
-                this.particles = updateParticles(this.particles, deltaTime);
-            }
-            return;
-        }
-
-        // ---- Перезарядка (если она идёт) ----
+        // ---- ЛОГИКА ПЕРЕЗАРЯДКИ (выполняется всегда, независимо от цели) ----
         if (this.reloading) {
             this.reloadTimer -= deltaTime;
             if (this.reloadTimer <= 0) {
@@ -135,14 +114,37 @@ export class ShotgunTower extends Tower {
                 this.cooldown = 0;
                 this.reloadTimer = 0;
             }
+            // Если в перезарядке – не ищем цель и не стреляем
+            // Но продолжаем обновлять частицы
+            if (this.particles) {
+                this.particles = updateParticles(this.particles, deltaTime);
+            }
             return;
         }
 
-        // ---- Если патроны закончились, начинаем перезарядку ----
+        // ---- Если патроны закончились, начинаем перезарядку (даже без цели) ----
         if (this.currentBurst >= this.bursts) {
             this.reloading = true;
             this.reloadTimer = this.reloadTime;
             this.currentBurst = this.bursts; // показываем полную полоску как пустую
+            return;
+        }
+
+        // ---- Поиск цели (только если не в перезарядке и есть патроны) ----
+        if (this.target) {
+            if (!this.target.isAlive() || !this.isInRange(this.target)) {
+                this.target = null;
+            }
+        }
+        if (!this.target) {
+            this.target = this.findTarget(enemies);
+        }
+
+        // ---- Если цели нет – обновляем частицы и выходим ----
+        if (!this.target) {
+            if (this.particles) {
+                this.particles = updateParticles(this.particles, deltaTime);
+            }
             return;
         }
 
@@ -160,7 +162,7 @@ export class ShotgunTower extends Tower {
 
         // ---- Проверка на окончание патронов (после выстрела) ----
         if (this.currentBurst >= this.bursts) {
-            // Перезарядка начнётся на следующем кадре (в условии выше)
+            // На следующем кадре запустится перезарядка
         }
 
         if (this.particles) {
@@ -206,17 +208,15 @@ export class ShotgunTower extends Tower {
         const y = this.y - 25;
 
         if (this.reloading) {
-            // Перезарядка – прогресс
             const progress = 1 - (this.reloadTimer / this.reloadTime);
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fillRect(x, y, barWidth, barHeight);
             ctx.fillStyle = '#A0522D';
             ctx.fillRect(x, y, barWidth * progress, barHeight);
         } else {
-            // Патроны – сегменты
             const segments = this.bursts;
             const segWidth = barWidth / segments;
-            const filled = this.currentBurst; // сколько уже потрачено (0 = полный магазин)
+            const filled = this.currentBurst; // сколько потрачено
             for (let i = 0; i < segments; i++) {
                 const segX = x + i * segWidth;
                 const isFilled = (i < segments - filled);

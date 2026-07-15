@@ -112,10 +112,13 @@ export class Tower {
         return best;
     }
 
+    // ----- ИСПРАВЛЕННАЯ ПРОВЕРКА ДАЛЬНОСТИ (по краю врага) -----
     isInRange(enemy) {
         const dx = enemy.x - this.x;
         const dy = enemy.y - this.y;
-        return dx*dx + dy*dy <= this.range * this.range;
+        const dist = Math.hypot(dx, dy);
+        // Проверяем, что расстояние до центра врага меньше радиуса башни + радиус врага
+        return dist <= this.range + enemy.radius;
     }
 
     shoot(bullets) {
@@ -175,6 +178,7 @@ export class Tower {
         return null;
     }
 
+    // ----- ДОБАВЛЕН БАФФ ДАЛЬНОСТИ В СТАТЫ -----
     getStats() {
         let stats = {
             'Уровень': this.level + '/' + this.maxLevel,
@@ -218,6 +222,13 @@ export class Tower {
             if (buff.damage > 0) stats['Бафф урона (акт.)'] = '+' + buff.damage + '%';
             if (buff.fireRate > 0) stats['Бафф скорости (акт.)'] = '+' + buff.fireRate + '%';
         }
+
+        // Показываем, если есть бафф дальности от спутника
+        if (this.rangeBuffMultiplier !== 1) {
+            const bonus = Math.round((this.rangeBuffMultiplier - 1) * 100);
+            stats['Бафф дальности (акт.)'] = '+' + bonus + '%';
+        }
+
         return stats;
     }
 
@@ -250,7 +261,7 @@ export class Tower {
                 damage = Math.floor(damage * 1.3);
                 upgradeCost = Math.floor(upgradeCost * 1.4);
             } else if (this.type === 'satellite') {
-                // Спутник обрабатывается в SatelliteTower
+                // Не обрабатываем здесь, так как апгрейд спутника переопределён
             }
         }
 
@@ -274,6 +285,8 @@ export class Tower {
             stats['Замедление'] = (1 - slowFactor) * 100 + '%';
             stats['Волн'] = burstCount;
             dps = damage / fireRate;
+        } else if (this.type === 'satellite') {
+            // Для спутника не используем getStatsForLevel
         }
         stats['DPS'] = dps.toFixed(1);
         return stats;
@@ -299,8 +312,14 @@ export class Tower {
         ctx.lineWidth = this.level >= 2 ? 3 : 2;
         ctx.strokeRect(this.x - r, this.y - r, r*2, r*2);
 
-        // Дополнительные детали в зависимости от типа
-        // ... (оставляем без изменений, чтобы не раздувать)
+        // Дополнительные визуальные эффекты для разных типов (оставим как в оригинале)
+        if (this.type === 'pistol') {
+            // ... (можно оставить как было)
+        } else if (this.type === 'flame') {
+            // ...
+        } else if (this.type === 'dj') {
+            // ...
+        }
 
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 12px Arial';

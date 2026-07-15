@@ -141,6 +141,8 @@ export class GameEngine {
 
     init() {
         this.state.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj'];
+        // Сразу рендерим панель
+        this.renderShopPanel();
 
         const playBtn = document.getElementById('mapSelectPlayBtn');
         if (playBtn) {
@@ -198,19 +200,71 @@ export class GameEngine {
             if (e.key === 'Escape') {
                 this.selectedTowerType = null;
                 this.clearSelection();
-                this.updateShopUI();
+                this.renderShopPanel();
             }
         });
 
+        // Обработчики клика по элементам панели – делегирование
         document.addEventListener('click', (e) => {
             const item = e.target.closest('.shop-item');
-            if (item && this.ui.shopItems) {
+            if (item && item.dataset.tower) {
                 const type = item.dataset.tower;
                 this.selectTowerType(type);
             }
         });
+        // Для тач-событий
+        document.addEventListener('touchstart', (e) => {
+            const item = e.target.closest('.shop-item');
+            if (item && item.dataset.tower) {
+                e.preventDefault();
+                const type = item.dataset.tower;
+                this.selectTowerType(type);
+            }
+        }, { passive: false });
 
-        this.updateShopUI();
+        this.renderShopPanel();
+    }
+
+    // ---- Единый метод рендеринга панели выбора башен ----
+    renderShopPanel() {
+        const container = document.getElementById('shopItems');
+        if (!container) return;
+        container.innerHTML = '';
+        const configs = {
+            pistol: { label: '🔫 Пистолетчик', cost: 60 },
+            flame: { label: '🔥 Огнемёт', cost: 200 },
+            dj: { label: '🎧 DJ', cost: 280 },
+            electric: { label: '⚡ Электрошокер', cost: 95 },
+            laser: { label: '🔴 Лазер', cost: 1000 },
+            shotgun: { label: '💥 Дробовик', cost: 250 }
+        };
+        // Рендерим только те башни, которые есть в selectedTowers
+        for (const type of this.state.selectedTowers) {
+            const cfg = configs[type];
+            if (!cfg) continue;
+            const el = document.createElement('div');
+            el.className = 'shop-item';
+            el.dataset.tower = type;
+            el.innerHTML = `<span>${cfg.label}</span><small>${cfg.cost}💰</small>`;
+            container.appendChild(el);
+        }
+        // Обновляем подсказку
+        const hint = document.getElementById('shopHint');
+        if (hint) {
+            hint.textContent = this.selectedTowerType ? `Выбрано: ${this.selectedTowerType}` : 'Кликните по иконке для выбора';
+        }
+    }
+
+    getTowerCost(type) {
+        const costs = {
+            pistol: 60,
+            flame: 200,
+            dj: 280,
+            electric: 95,
+            laser: 1000,
+            shotgun: 250
+        };
+        return costs[type] || 0;
     }
 
     async startGame() {
@@ -237,7 +291,7 @@ export class GameEngine {
             }
         }
 
-        // Принудительно добавляем дробовик в выбранные, если он разблокирован
+        // ---- Принудительно добавляем дробовик в выбранные, если он разблокирован ----
         let selected = getSelectedTowers() || ['pistol', 'flame', 'dj'];
         if (this.state.unlockedTowers.includes('shotgun') && !selected.includes('shotgun')) {
             if (selected.length < 4) {
@@ -249,6 +303,7 @@ export class GameEngine {
         }
         this.state.selectedTowers = selected;
 
+        // ---- Мультиплеер ----
         this.state.isMultiplayer = window._isMultiplayer || false;
         if (this.state.isMultiplayer) {
             this.state.roomId = window._multiplayerRoomId;
@@ -329,58 +384,11 @@ export class GameEngine {
             this.startWaveBtn.textContent = 'Start Wave';
         }
 
-        this.updateShopUI(); // вместо this.ui.renderShop
+        this.renderShopPanel();
         this.ui.updateUI(this.state);
         this.renderLeaderboard();
         this.lastTime = performance.now();
         this.gameLoop();
-    }
-
-    updateUI() {
-        this.ui.updateUI(this.state);
-        this.renderLeaderboard();
-    }
-
-    getTowerCost(type) {
-        const costs = {
-            pistol: 60,
-            flame: 200,
-            dj: 280,
-            electric: 95,
-            laser: 1000,
-            shotgun: 250
-        };
-        return costs[type] || 0;
-    }
-
-    updateShopUI() {
-        if (!this.ui.shopItems) return;
-        this.ui.shopItems.innerHTML = '';
-        const configs = {
-            pistol: { label: '🔫 Пистолетчик', cost: 60 },
-            flame: { label: '🔥 Огнемёт', cost: 200 },
-            dj: { label: '🎧 DJ', cost: 280 },
-            electric: { label: '⚡ Электрошокер', cost: 95 },
-            laser: { label: '🔴 Лазер', cost: 1000 },
-            shotgun: { label: '💥 Дробовик', cost: 250 }
-        };
-        for (const type of this.state.selectedTowers) {
-            const cfg = configs[type];
-            if (!cfg) continue;
-            const el = document.createElement('div');
-            el.className = 'shop-item';
-            el.dataset.tower = type;
-            el.innerHTML = `<span>${cfg.label}</span><small>${cfg.cost}💰</small>`;
-            el.addEventListener('click', () => this.selectTowerType(type));
-            el.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                this.selectTowerType(type);
-            }, { passive: false });
-            this.ui.shopItems.appendChild(el);
-        }
-        if (this.ui.shopHint) {
-            this.ui.shopHint.textContent = this.selectedTowerType ? `Выбрано: ${this.selectedTowerType}` : 'Кликните по иконке для выбора';
-        }
     }
 
     applyGameState(state) {
@@ -430,6 +438,12 @@ export class GameEngine {
 
     handleAction(action) {
         console.log('⚡ Действие от другого игрока:', action);
+    }
+
+    // ---- Обновление UI (прокси) ----
+    updateUI() {
+        this.ui.updateUI(this.state);
+        this.renderLeaderboard();
     }
 
     gameLoop() {
@@ -546,7 +560,7 @@ export class GameEngine {
         if (this.selectedTowerType) {
             if (!this.state.selectedTowers.includes(this.selectedTowerType)) {
                 this.selectedTowerType = null;
-                this.updateShopUI();
+                this.renderShopPanel();
                 return;
             }
             const { gridX, gridY } = this.map.pixelToGrid(x, y);
@@ -596,10 +610,7 @@ export class GameEngine {
                     tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
                     if (tower) this.shotgunCount++;
                 }
-                if (tower) {
-                    this.ui.updateUI(this.state);
-                    this.updateShopUI();
-                }
+                if (tower) this.ui.updateUI(this.state);
             }
             return;
         }
@@ -634,13 +645,13 @@ export class GameEngine {
             const cost = this.getTowerCost(type);
             if (this.state.gold < cost) {
                 this.ui.showHint('Недостаточно золота!');
-                setTimeout(() => this.updateShopUI(), 1000);
+                setTimeout(() => this.renderShopPanel(), 1000);
                 return;
             }
             this.selectedTowerType = type;
         }
         this.clearSelection();
-        this.updateShopUI();
+        this.renderShopPanel();
     }
 
     selectTower(tower) {
@@ -669,7 +680,6 @@ export class GameEngine {
                 if (tower.type === 'shotgun') this.shotgunCount--;
                 this.clearSelection();
                 this.ui.updateUI(this.state);
-                this.updateShopUI();
             }
         );
     }

@@ -64,7 +64,7 @@ export const TOWER_TYPES = {
     },
     laser: {
         range: 220,
-        damage: 4,
+        damage: 2,
         fireRate: 0.02,
         cost: 1000,
         upgradeCost: 700,
@@ -74,6 +74,19 @@ export const TOWER_TYPES = {
         label: 'Лазер',
         icon: '🔴',
         desc: 'Постоянный урон, зарядка на цели (поздняя игра)'
+    },
+    shotgun: {
+        range: 140,
+        damage: 24,
+        fireRate: 0.6,
+        cost: 250,
+        upgradeCost: 350,
+        color: '#ff8800',
+        maxLevel: 5,
+        burnDamagePerSec: 0,
+        label: 'Дробовик',
+        icon: '💥',
+        desc: 'Мощный залп, пробивные пули (лейт-гейм)'
     }
 };
 

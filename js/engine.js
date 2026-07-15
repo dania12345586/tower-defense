@@ -1,4 +1,3 @@
-
 import { GameMap } from './map.js';
 import { GameState } from './core/GameState.js';
 import { TowerManager } from './core/TowerManager.js';
@@ -11,6 +10,7 @@ import { initSync, sendAction, updateGameState, unsubscribeSync, getGameState } 
 import { updateTowerPanel } from './ui/towerPanel.js';
 import { Bullet, FlameBullet, SoundWaveBullet } from './towers/Bullet.js';
 import { DJTower } from './towers/DJTower.js';
+import { ShotgunTower } from './towers/ShotgunTower.js';
 
 export class GameEngine {
     constructor() {
@@ -29,7 +29,6 @@ export class GameEngine {
         this.lastTime = 0;
         this.deltaTime = 0;
         this.menuButtonCreated = false;
-        this.isFirstWave = true;
         this.selectedTower = null;
 
         this.sounds = {};
@@ -46,6 +45,9 @@ export class GameEngine {
         this.toggleAdminBtn = document.getElementById('toggleAdminPanel');
         this.leaderboardList = document.getElementById('leaderboardList');
 
+        this.shotgunCount = 0;
+        this.maxShotguns = 4;
+
         this.loadSounds();
         this.loadMusic();
         this.init();
@@ -57,7 +59,8 @@ export class GameEngine {
             shootFlame: { path: 'sounds/shoot_flame.mp3', volume: 0.4 },
             shootElectric: { path: 'sounds/shoot_electric.mp3', volume: 0.15 },
             shootDj: { path: 'sounds/shoot_dj.mp3', volume: 0.15 },
-            shootLaser: { path: 'sounds/shoot_laser.mp3', volume: 0.2 }
+            shootLaser: { path: 'sounds/shoot_laser.mp3', volume: 0.2 },
+            shootShotgun: { path: 'sounds/shoot_shotgun.mp3', volume: 0.3 }
         };
         for (const [key, config] of Object.entries(soundFiles)) {
             try {
@@ -163,12 +166,12 @@ export class GameEngine {
         });
 
         this.startWaveBtn.addEventListener('click', () => {
-            if (this.isFirstWave && !this.currentMusic) {
+            if (this.state.isFirstWave && !this.currentMusic) {
                 this.playMusic(this.state.selectedMap);
             }
             this.waveManager?.startWave();
+            this.state.isFirstWave = false;
             this.startWaveBtn.style.display = 'none';
-            this.isFirstWave = false;
         });
 
         this.canvas.addEventListener('click', (e) => {
@@ -234,7 +237,6 @@ export class GameEngine {
             }
         }
 
-        // Мультиплеер
         this.state.isMultiplayer = window._isMultiplayer || false;
         if (this.state.isMultiplayer) {
             this.state.roomId = window._multiplayerRoomId;
@@ -243,19 +245,41 @@ export class GameEngine {
             this.state.isHost = window._isHost || false;
             this.state.syncEnabled = true;
             this.state.gold = 80;
-
             initSync(this.state.roomId, this.state.myPlayerId, this.state.isHost, (newState) => {
                 this.applyGameState(newState);
                 this.renderLeaderboard();
             });
-
-            if (!this.state.isHost) {
+            if (this.state.isHost) {
+                try {
+                    const { data: room } = await supabase
+                        .from('rooms')
+                        .select('players')
+                        .eq('id', this.state.roomId)
+                        .single();
+                    if (room && room.players) {
+                        const players = room.players;
+                        const { data: playerData } = await supabase
+                            .from('players')
+                            .select('id, username')
+                            .in('id', players);
+                        const names = {};
+                        playerData.forEach(p => { names[p.id] = p.username; });
+                        const playersState = {};
+                        players.forEach(id => {
+                            playersState[id] = { gold: 80, lives: 20, score: 0, username: names[id] || id.slice(0,6) };
+                        });
+                        this.state.players_state = playersState;
+                        this.renderLeaderboard();
+                    }
+                } catch (e) { console.warn(e); }
+            } else {
                 try {
                     const state = await getGameState(this.state.roomId);
-                    if (state) this.applyGameState(state);
-                } catch (e) {
-                    console.warn('Не удалось загрузить состояние:', e);
-                }
+                    if (state) {
+                        this.applyGameState(state);
+                        this.renderLeaderboard();
+                    }
+                } catch (e) { console.warn(e); }
             }
         } else {
             this.state.gold = 120;
@@ -267,7 +291,7 @@ export class GameEngine {
         this.state.score = 0;
         this.state.gameOver = false;
         this.state.victory = false;
-        this.isFirstWave = true;
+        this.state.isFirstWave = true;
         this.menuButtonCreated = false;
         this.state.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj'];
 
@@ -280,13 +304,12 @@ export class GameEngine {
         this.state.shockerCount = 0;
         this.state.pistolCount = 0;
         this.state.laserCount = 0;
+        this.shotgunCount = 0;
 
         this.towerManager = new TowerManager(this.state, this.map, this.ui);
         this.enemyManager = new EnemyManager(this.state, this.map, this.ui);
         this.waveManager = new WaveManager(this.state, this.enemyManager, this.ui);
 
-        // Кнопка Start Wave только для хоста
-        console.log('isMultiplayer:', this.state.isMultiplayer, 'isHost:', this.state.isHost);
         if (this.state.isMultiplayer && !this.state.isHost) {
             this.startWaveBtn.style.display = 'none';
         } else {
@@ -344,10 +367,7 @@ export class GameEngine {
     }
 
     selectLeaderboardPlayer(playerId) {
-        // Подсветить башни этого игрока (если в башнях хранится ownerId)
-        // Пока заглушка
         console.log('Выбран игрок:', playerId);
-        // В будущем: this.state.towers.forEach(t => t.highlight = (t.ownerId === playerId));
     }
 
     handleAction(action) {
@@ -419,6 +439,7 @@ export class GameEngine {
             else if (this.selectedTowerType === 'dj') previewRange = 140;
             else if (this.selectedTowerType === 'electric') previewRange = 155;
             else if (this.selectedTowerType === 'laser') previewRange = 220;
+            else if (this.selectedTowerType === 'shotgun') previewRange = 140;
 
             this.ctx.fillStyle = canBuild && enoughGold ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)';
             this.ctx.beginPath();
@@ -454,6 +475,10 @@ export class GameEngine {
             this.ctx.font = '24px Arial';
             this.ctx.fillText('Score: ' + this.state.score, this.canvas.width/2, this.canvas.height/2 + 30);
             this.stopMusic();
+            // Вызов проверки достижений
+            if (window.checkAchievements) {
+                window.checkAchievements(this.state);
+            }
             this.cleanupMultiplayerRoom();
         }
     }
@@ -475,7 +500,45 @@ export class GameEngine {
                     return;
                 }
                 const { x: tx, y: ty } = this.map.gridToPixel(gridX, gridY);
-                const tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                let tower;
+                if (this.selectedTowerType === 'pistol') {
+                    if (this.state.pistolCount >= this.state.maxPistols) {
+                        this.ui.showHint('Достигнут лимит пистолетчиков (4)!');
+                        return;
+                    }
+                    tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                } else if (this.selectedTowerType === 'flame') {
+                    if (this.state.flameTowerCount >= this.state.maxFlameTowers) {
+                        this.ui.showHint('Достигнут лимит огнемётов (2)!');
+                        return;
+                    }
+                    tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                } else if (this.selectedTowerType === 'dj') {
+                    if (this.state.djTowerCount >= this.state.maxDjTowers) {
+                        this.ui.showHint('Достигнут лимит DJ (1)!');
+                        return;
+                    }
+                    tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                } else if (this.selectedTowerType === 'electric') {
+                    if (this.state.shockerCount >= this.state.maxShockers) {
+                        this.ui.showHint('Достигнут лимит шокеров (3)!');
+                        return;
+                    }
+                    tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                } else if (this.selectedTowerType === 'laser') {
+                    if (this.state.laserCount >= this.state.maxLasers) {
+                        this.ui.showHint('Достигнут лимит лазеров (2)!');
+                        return;
+                    }
+                    tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                } else if (this.selectedTowerType === 'shotgun') {
+                    if (this.shotgunCount >= this.maxShotguns) {
+                        this.ui.showHint('Достигнут лимит дробовиков (4)!');
+                        return;
+                    }
+                    tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                    if (tower) this.shotgunCount++;
+                }
                 if (tower) this.ui.updateUI(this.state);
             }
             return;
@@ -542,6 +605,7 @@ export class GameEngine {
             () => this.towerManager.upgrade(this.selectedTower),
             (tower, price) => {
                 this.towerManager.sell(tower);
+                if (tower.type === 'shotgun') this.shotgunCount--;
                 this.clearSelection();
                 this.ui.updateUI(this.state);
             }

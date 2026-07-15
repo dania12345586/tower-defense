@@ -15,13 +15,24 @@ let unlockedTowers = ['pistol', 'flame', 'dj'];
 let coins = 0;
 let userId = null;
 let rememberMe = true;
+let achievements = [];
 
-// ----- Запоминание -----
+// Достижения
+const ACHIEVEMENTS = {
+    FIRST_WIN: {
+        id: 'first_win',
+        name: 'Первая победа',
+        desc: 'Выиграйте свою первую игру',
+        reward: 'shotgun', // разблокирует дробовик
+        icon: '🏆'
+    },
+    // Другие достижения можно добавить позже
+};
+
 document.getElementById('rememberMe').addEventListener('change', (e) => {
     rememberMe = e.target.checked;
 });
 
-// ----- Запуск игры -----
 function startGameEngine() {
     if (!window.game) {
         window.game = new GameEngine();
@@ -29,7 +40,6 @@ function startGameEngine() {
     }
 }
 
-// ----- Монеты -----
 function updateCoinsDisplay() {
     const coinsDisplay = document.getElementById('coinsDisplay');
     if (coinsDisplay) coinsDisplay.textContent = coins;
@@ -37,7 +47,6 @@ function updateCoinsDisplay() {
     renderShopModal();
 }
 
-// ----- Отображение выбранных башен -----
 function renderSelectedTowers() {
     const container = document.getElementById('selectedTowersDisplay');
     if (!container) return;
@@ -46,7 +55,7 @@ function renderSelectedTowers() {
         container.innerHTML = '<span style="color:#888; font-size:0.9rem;">Ничего не выбрано</span>';
         return;
     }
-    const icons = { pistol: '🔫', flame: '🔥', dj: '🎧', electric: '⚡', laser: '🔴' };
+    const icons = { pistol: '🔫', flame: '🔥', dj: '🎧', electric: '⚡', laser: '🔴', shotgun: '💥' };
     selectedTowers.forEach(type => {
         const span = document.createElement('span');
         span.className = 'selected-tower-icon';
@@ -56,7 +65,6 @@ function renderSelectedTowers() {
     });
 }
 
-// ----- Модалка выбора башен -----
 function updateTowerSelectionModal() {
     document.querySelectorAll('#towerSelectModal .tower-card').forEach(card => {
         const type = card.dataset.tower;
@@ -66,6 +74,7 @@ function updateTowerSelectionModal() {
     renderSelectedTowers();
     window._selectedTowers = selectedTowers;
 }
+
 function updateModalState() {
     document.querySelectorAll('#towerSelectModal .tower-card').forEach(card => {
         const type = card.dataset.tower;
@@ -73,14 +82,17 @@ function updateModalState() {
         card.style.display = unlockedTowers.includes(type) ? 'flex' : 'none';
     });
 }
+
 function openTowerSelectModal() {
     document.getElementById('towerSelectModal').style.display = 'flex';
     updateModalState();
     document.getElementById('towerSelectWarning').textContent = '';
 }
+
 function closeTowerSelectModal() {
     document.getElementById('towerSelectModal').style.display = 'none';
 }
+
 function handleTowerCardClick(e) {
     const card = e.target.closest('.tower-card');
     if (!card) return;
@@ -100,6 +112,7 @@ function handleTowerCardClick(e) {
         document.getElementById('towerSelectWarning').textContent = '';
     }
 }
+
 function saveTowerSelection() {
     if (selectedTowers.length === 0) {
         document.getElementById('towerSelectWarning').textContent = '❌ Выберите хотя бы одну башню!';
@@ -109,6 +122,7 @@ function saveTowerSelection() {
     renderSelectedTowers();
     closeTowerSelectModal();
 }
+
 function cancelTowerSelection() {
     selectedTowers = (window._selectedTowers || ['pistol', 'flame', 'dj']).filter(t => unlockedTowers.includes(t));
     updateModalState();
@@ -131,6 +145,7 @@ function renderShopModal() {
     const items = [
         { id: 'electric', label: '⚡ Электрошокер', cost: 150, unlocked: unlockedTowers.includes('electric') },
         { id: 'laser', label: '🔴 Лазер', cost: 400, unlocked: unlockedTowers.includes('laser') }
+        // Дробовик не продаётся в магазине, только достижение
     ];
     items.forEach(item => {
         const div = document.createElement('div');
@@ -158,6 +173,7 @@ function renderShopModal() {
     });
     document.getElementById('shopCoinsDisplay').textContent = coins;
 }
+
 async function buyItem(itemId, cost) {
     if (coins < cost) { alert('Недостаточно монет!'); return; }
     if (unlockedTowers.includes(itemId)) { alert('Уже куплено!'); return; }
@@ -165,7 +181,7 @@ async function buyItem(itemId, cost) {
     unlockedTowers.push(itemId);
     if (userId) {
         try {
-            await saveProgress(userId, { coins, unlocked_towers: unlockedTowers, achievements: window.game?.state.achievements || [] });
+            await saveProgress(userId, { coins, unlocked_towers: unlockedTowers, achievements });
         } catch (e) { console.warn(e); }
     }
     updateCoinsDisplay();
@@ -174,18 +190,72 @@ async function buyItem(itemId, cost) {
     alert(`✅ ${itemId} куплен!`);
 }
 
-// ----- Загрузка пользователя -----
-async function loadUserData() {
-    const savedUser = getCurrentUser();
-    if (!savedUser) return;
-    userId = savedUser.id;
+// ----- Достижения -----
+function renderAchievementsModal() {
+    const container = document.getElementById('achievementsList');
+    if (!container) return;
+    container.innerHTML = '';
+    const allAchievements = Object.values(ACHIEVEMENTS);
+    allAchievements.forEach(a => {
+        const unlocked = achievements.includes(a.id);
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:6px;';
+        div.innerHTML = `
+            <span>${a.icon} ${a.name}</span>
+            <span style="font-size:0.8rem; color:${unlocked ? '#2ecc71' : '#888'};">
+                ${unlocked ? '✅ Разблокировано' : a.desc}
+            </span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function openAchievementsModal() {
+    document.getElementById('achievementsModal').style.display = 'flex';
+    renderAchievementsModal();
+}
+function closeAchievementsModal() {
+    document.getElementById('achievementsModal').style.display = 'none';
+}
+
+// Проверка достижений (вызывается при победе)
+window.checkAchievements = function(state) {
+    if (!state || !state.userId) return;
+    let newAchievements = [];
+    // Первая победа
+    if (!achievements.includes('first_win')) {
+        newAchievements.push('first_win');
+    }
+    if (newAchievements.length > 0) {
+        achievements = [...achievements, ...newAchievements];
+        // Награды
+        if (newAchievements.includes('first_win')) {
+            // Разблокируем дробовик
+            if (!unlockedTowers.includes('shotgun')) {
+                unlockedTowers.push('shotgun');
+                alert('🏆 Достижение разблокировано: Первая победа! Вы получили башню Дробовик!');
+            }
+        }
+        // Сохраняем
+        if (userId) {
+            saveProgress(userId, { coins, unlocked_towers: unlockedTowers, achievements }).catch(console.warn);
+        }
+        updateTowerSelectionModal();
+        renderAchievementsModal();
+    }
+};
+
+// ----- Инициализация игры -----
+async function initGameWithUser(user) {
+    userId = user.id;
     window._userId = userId;
-    window._username = savedUser.username;
+    window._username = user.username;
     try {
         const progress = await loadProgress(userId);
         if (progress) {
             coins = progress.coins || 0;
             unlockedTowers = progress.unlocked_towers || ['pistol', 'flame', 'dj'];
+            achievements = progress.achievements || [];
             selectedTowers = unlockedTowers.slice(0, MAX_TOWERS);
             if (selectedTowers.length === 0) selectedTowers = ['pistol'];
             window._selectedTowers = selectedTowers;
@@ -201,8 +271,11 @@ async function loadUserData() {
 
 // ----- Авторизация -----
 const savedUser = getCurrentUser();
-if (savedUser) loadUserData();
-else clearCurrentUser();
+if (savedUser) {
+    initGameWithUser(savedUser);
+} else {
+    clearCurrentUser();
+}
 
 document.getElementById('authRegisterBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
@@ -230,14 +303,15 @@ document.getElementById('authLoginBtn').addEventListener('click', async () => {
             window._userId = user.id;
             window._username = user.username;
         }
-        loadUserData();
+        await initGameWithUser(user);
     } catch (e) { authMessage.textContent = '❌ ' + e.message; }
 });
 
-// ----- Выход -----
 document.getElementById('logoutBtn').addEventListener('click', () => {
     if (confirm('Выйти из аккаунта?')) {
         clearCurrentUser();
+        window._userId = null;
+        window._username = null;
         location.reload();
     }
 });
@@ -262,6 +336,13 @@ document.getElementById('towerSelectModal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) cancelTowerSelection();
 });
 document.getElementById('towerSelectModal').addEventListener('click', handleTowerCardClick);
+
+// ----- Достижения -----
+document.getElementById('achievementsBtn').addEventListener('click', openAchievementsModal);
+document.getElementById('closeAchievementsBtn').addEventListener('click', closeAchievementsModal);
+document.getElementById('achievementsModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeAchievementsModal();
+});
 
 // ----- Мультиплеер -----
 document.getElementById('multiplayerBtn').addEventListener('click', () => {

@@ -237,6 +237,19 @@ export class GameEngine {
             }
         }
 
+        // ---- ФИКС: принудительно добавляем дробовик в выбранные башни, если он разблокирован ----
+        let selected = getSelectedTowers() || ['pistol', 'flame', 'dj'];
+        if (this.state.unlockedTowers.includes('shotgun') && !selected.includes('shotgun')) {
+            if (selected.length < 4) {
+                selected.push('shotgun');
+            } else {
+                selected[selected.length - 1] = 'shotgun';
+            }
+            window._selectedTowers = selected;
+        }
+        this.state.selectedTowers = selected;
+
+        // Мультиплеер
         this.state.isMultiplayer = window._isMultiplayer || false;
         if (this.state.isMultiplayer) {
             this.state.roomId = window._multiplayerRoomId;
@@ -293,7 +306,6 @@ export class GameEngine {
         this.state.victory = false;
         this.state.isFirstWave = true;
         this.menuButtonCreated = false;
-        this.state.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj'];
 
         this.map = new GameMap(this.canvas.width, this.canvas.height, 40, this.state.selectedMap);
         this.state.towers = [];

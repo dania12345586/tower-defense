@@ -5,7 +5,6 @@ export class DJTower extends Tower {
     constructor(x, y) {
         super(x, y, 'dj');
         this.particles = [];
-        // Добавляем анимационные переменные
         this.discoAngle = 0;
     }
 
@@ -60,36 +59,37 @@ export class DJTower extends Tower {
         const time = Date.now() / 1000;
         this.discoAngle += 0.02;
 
-        // ---- Анимированные улучшения для DJ ----
+        // ---- Исправленные анимации с проверкой радиуса ----
         if (this.level >= 2) {
-            // Музыкальные волны
             for (let i = 0; i < 3; i++) {
                 const angle = (i / 3) * Math.PI*2 + time * 0.8;
                 const dist = r + 8 + 6 * Math.sin(time * 2 + i * 0.7);
+                const radius = Math.abs(dist - r - 4); // гарантируем положительный радиус
                 ctx.strokeStyle = `rgba(170,102,255,${0.2 + 0.2 * Math.sin(time * 1.5 + i)})`;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(this.x + Math.cos(angle) * (r + 4), this.y + Math.sin(angle) * (r + 4), dist - r - 4, 0, Math.PI*2);
+                ctx.arc(this.x + Math.cos(angle) * (r + 4), this.y + Math.sin(angle) * (r + 4), radius, 0, Math.PI*2);
                 ctx.stroke();
             }
         }
+
         if (this.level >= 3) {
-            // Цветные круги
             const colors = ['#aa66ff', '#ff66aa', '#66ffaa'];
             for (let i = 0; i < 3; i++) {
                 const angle = (i / 3) * Math.PI*2 + time * 0.5;
                 const dist = r + 14 + 4 * Math.sin(time * 1.2 + i);
+                const radius = Math.abs(6 + 3 * Math.sin(time * 2 + i)); // всегда положительный
                 ctx.strokeStyle = colors[i];
                 ctx.globalAlpha = 0.3 + 0.2 * Math.sin(time * 1.8 + i);
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(this.x + Math.cos(angle) * dist, this.y + Math.sin(angle) * dist, 6 + 3 * Math.sin(time * 2 + i), 0, Math.PI*2);
+                ctx.arc(this.x + Math.cos(angle) * dist, this.y + Math.sin(angle) * dist, radius, 0, Math.PI*2);
                 ctx.stroke();
                 ctx.globalAlpha = 1;
             }
         }
+
         if (this.level >= 4) {
-            // Ноты
             for (let i = 0; i < 4; i++) {
                 const angle = (i / 4) * Math.PI*2 + time * 0.7;
                 const dist = r + 20 + 4 * Math.sin(time * 1.5 + i * 0.5);
@@ -100,8 +100,8 @@ export class DJTower extends Tower {
                 ctx.fillText('♪', this.x + Math.cos(angle) * dist, this.y + Math.sin(angle) * dist);
             }
         }
+
         if (this.level === 5) {
-            // Дискотека – мерцающие лучи
             for (let i = 0; i < 6; i++) {
                 const angle = (i / 6) * Math.PI*2 + time * 0.3;
                 const len = r + 24 + 8 * Math.sin(time * 1.2 + i * 0.6);
@@ -112,7 +112,6 @@ export class DJTower extends Tower {
                 ctx.lineTo(this.x + Math.cos(angle) * len, this.y + Math.sin(angle) * len);
                 ctx.stroke();
             }
-            // Пульсирующий центр
             const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r + 10);
             grad.addColorStop(0, `rgba(170,102,255,${0.3 * (0.5 + 0.5 * Math.sin(time * 1.5))})`);
             grad.addColorStop(1, 'rgba(170,102,255,0)');

@@ -325,6 +325,12 @@ export class GameEngine {
         this.gameLoop();
     }
 
+    // Прокси-метод для adminPanel
+    updateUI() {
+        this.ui.updateUI(this.state);
+        this.renderLeaderboard();
+    }
+
     applyGameState(state) {
         if (!state) return;
         this.state.wave = state.wave || 1;
@@ -427,7 +433,7 @@ export class GameEngine {
         for (const e of this.state.enemies) e.draw(this.ctx);
         for (const b of this.state.bullets) b.draw(this.ctx);
 
-        if (this.selectedTowerType && this.hoveredCell) {
+        if (this.selectedTowerType && this.hoveredCell && this.map) {
             const { gridX, gridY } = this.hoveredCell;
             const { x, y } = this.map.gridToPixel(gridX, gridY);
             const canBuild = this.map.canBuildAt(gridX, gridY);
@@ -475,7 +481,6 @@ export class GameEngine {
             this.ctx.font = '24px Arial';
             this.ctx.fillText('Score: ' + this.state.score, this.canvas.width/2, this.canvas.height/2 + 30);
             this.stopMusic();
-            // Вызов проверки достижений
             if (window.checkAchievements) {
                 window.checkAchievements(this.state);
             }

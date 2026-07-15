@@ -1,4 +1,4 @@
-import { Tower, FlameTower, DJTower, ElectricTower, LaserTower } from '../towers/index.js';
+import { Tower, FlameTower, DJTower, ElectricTower, LaserTower, ShotgunTower } from '../towers/index.js';
 import { sendAction } from '../sync.js';
 
 export class TowerManager {
@@ -13,22 +13,43 @@ export class TowerManager {
                 djTowerCount, maxDjTowers, shockerCount, maxShockers,
                 laserCount, maxLasers } = this.state;
         const cost = this.state.getTowerCost(type);
-        if (gold < cost) { this.ui.showHint('Недостаточно золота!'); return false; }
+        if (gold < cost) {
+            this.ui.showHint('Недостаточно золота!');
+            return false;
+        }
         switch(type) {
             case 'pistol':
-                if (pistolCount >= maxPistols) { this.ui.showHint('Достигнут лимит пистолетчиков (4)!'); return false; }
+                if (pistolCount >= maxPistols) {
+                    this.ui.showHint('Достигнут лимит пистолетчиков (4)!');
+                    return false;
+                }
                 break;
             case 'flame':
-                if (flameTowerCount >= maxFlameTowers) { this.ui.showHint('Достигнут лимит огнемётов (2)!'); return false; }
+                if (flameTowerCount >= maxFlameTowers) {
+                    this.ui.showHint('Достигнут лимит огнемётов (2)!');
+                    return false;
+                }
                 break;
             case 'dj':
-                if (djTowerCount >= maxDjTowers) { this.ui.showHint('Достигнут лимит DJ (1)!'); return false; }
+                if (djTowerCount >= maxDjTowers) {
+                    this.ui.showHint('Достигнут лимит DJ (1)!');
+                    return false;
+                }
                 break;
             case 'electric':
-                if (shockerCount >= maxShockers) { this.ui.showHint('Достигнут лимит шокеров (3)!'); return false; }
+                if (shockerCount >= maxShockers) {
+                    this.ui.showHint('Достигнут лимит шокеров (3)!');
+                    return false;
+                }
                 break;
             case 'laser':
-                if (laserCount >= maxLasers) { this.ui.showHint('Достигнут лимит лазеров (2)!'); return false; }
+                if (laserCount >= maxLasers) {
+                    this.ui.showHint('Достигнут лимит лазеров (2)!');
+                    return false;
+                }
+                break;
+            case 'shotgun':
+                // Лимит дробовиков проверяется в engine, здесь не нужен
                 break;
         }
         return true;
@@ -38,7 +59,6 @@ export class TowerManager {
         if (!this.canBuild(type)) return null;
         let tower;
         const cost = this.state.getTowerCost(type);
-        // Списываем деньги
         if (this.state.gold < cost) {
             this.ui.showHint('Недостаточно золота!');
             return null;
@@ -65,6 +85,10 @@ export class TowerManager {
             case 'laser':
                 tower = new LaserTower(tx, ty);
                 this.state.laserCount++;
+                break;
+            case 'shotgun':
+                tower = new ShotgunTower(tx, ty);
+                // Счётчик дробовиков увеличивается в engine
                 break;
             default:
                 return null;
@@ -107,6 +131,7 @@ export class TowerManager {
             case 'dj': this.state.djTowerCount--; break;
             case 'electric': this.state.shockerCount--; break;
             case 'laser': this.state.laserCount--; break;
+            case 'shotgun': /* счётчик уменьшается в engine */ break;
         }
         const price = Math.floor(tower.totalCost * 0.15);
         this.state.gold += price;

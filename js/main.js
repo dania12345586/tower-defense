@@ -176,7 +176,7 @@ async function buyItem(itemId, cost) {
     alert(`✅ ${itemId} куплен!`);
 }
 
-// ----- ЗАГРУЗКА ПОЛЬЗОВАТЕЛЯ -----
+// ----- ЗАГРУЗКА ПОЛЬЗОВАТЕЛЯ (после логина) -----
 async function loadUserData() {
     const savedUser = getCurrentUser();
     if (!savedUser) return;
@@ -201,11 +201,12 @@ async function loadUserData() {
     updateTowerSelectionModal();
 }
 
-// ----- АВТОРИЗАЦИЯ -----
-const savedUser = getCurrentUser();
-if (savedUser) loadUserData();
-else clearCurrentUser();
+// ----- АВТОРИЗАЦИЯ (теперь всегда показываем экран входа) -----
+// При загрузке всегда показываем экран авторизации (авто-вход отключён)
+clearCurrentUser(); // очищаем локальное хранилище, чтобы не было авто-входа
+authScreen.style.display = 'flex';
 
+// Обработчик регистрации
 document.getElementById('authRegisterBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
@@ -219,6 +220,7 @@ document.getElementById('authRegisterBtn').addEventListener('click', async () =>
     } catch (e) { authMessage.textContent = '❌ ' + e.message; }
 });
 
+// Обработчик входа
 document.getElementById('authLoginBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
@@ -226,7 +228,8 @@ document.getElementById('authLoginBtn').addEventListener('click', async () => {
     try {
         const user = await login(username, password);
         setCurrentUser(user);
-        loadUserData();
+        await loadUserData(); // после входа загружаем данные
+        authMessage.textContent = ''; // очищаем сообщение
     } catch (e) { authMessage.textContent = '❌ ' + e.message; }
 });
 
@@ -234,7 +237,7 @@ document.getElementById('authLoginBtn').addEventListener('click', async () => {
 document.getElementById('logoutBtn').addEventListener('click', () => {
     if (confirm('Выйти из аккаунта?')) {
         clearCurrentUser();
-        location.reload();
+        location.reload(); // перезагружаем страницу, показываем экран входа
     }
 });
 
@@ -281,6 +284,6 @@ document.querySelectorAll('.map-card').forEach(card => {
     });
 });
 
-// Инициализация
+// Инициализация (при пустом пользователе)
 window._selectedTowers = selectedTowers;
 renderSelectedTowers();

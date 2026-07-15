@@ -61,11 +61,11 @@ export class LaserTower extends Tower {
     constructor(x, y) {
         super(x, y, 'laser');
         this.color = '#ff44ff';
-        // Баланс
+        // ---- ФИКСИРОВАННАЯ СКОРОСТЕЛЬНОСТЬ: 50 ВЫСТРЕЛОВ/СЕК ----
         this.baseDamage = 2;
         this.chargeRate = 2;
         this.maxCharge = 4;
-        this.fireRate = 0.22;
+        this.fireRate = 0.02;          // 1/50 = 0.02 сек между выстрелами
         this.range = 220;
         this.cost = 1000;
         this.upgradeCost = 700;
@@ -73,13 +73,12 @@ export class LaserTower extends Tower {
         this.charge = 0;
         this.currentTarget = null;
         this.chargeTimer = 0;
-        this.beam = null;
+        this.cooldown = 0;
         this.maxLevel = 5;
         this.totalCost = 1000;
         this.totalDamage = 0;
         this.shootFlash = 0;
         this.particles = [];
-        this._laserSoundTimer = 0;
     }
 
     upgrade() {
@@ -88,6 +87,7 @@ export class LaserTower extends Tower {
         this.chargeRate += 0.2;
         this.maxCharge += 0.5;
         this.range = Math.floor(this.range * 1.01);
+        // Скорость атаки НЕ МЕНЯЕТСЯ
         this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
         this.damage = this.baseDamage;
@@ -103,12 +103,17 @@ export class LaserTower extends Tower {
             return;
         }
 
+        // Кулдаун для стрельбы
+        if (this.cooldown > 0) {
+            this.cooldown -= deltaTime;
+        }
+
+        // Поиск цели
         if (this.target) {
             if (!this.target.isAlive() || !this.isInRange(this.target)) {
                 this.target = null;
                 this.charge = 0;
                 this.chargeTimer = 0;
-                this._laserSoundTimer = 0;
             }
         }
         if (!this.target) {
@@ -116,10 +121,10 @@ export class LaserTower extends Tower {
             if (this.target) {
                 this.charge = 0;
                 this.chargeTimer = 0;
-                this._laserSoundTimer = 0;
             }
         }
 
+        // Зарядка (накапливается непрерывно, пока есть цель)
         if (this.target) {
             this.chargeTimer += deltaTime;
             if (this.chargeTimer >= 0.1) {
@@ -128,23 +133,18 @@ export class LaserTower extends Tower {
                 this.chargeTimer = 0;
             }
 
-            let currentDamage = this.baseDamage + this.charge;
-            if (this.isBuffed) {
-                currentDamage = Math.floor(currentDamage * this.buffDamageMult);
-            }
-
-            const beam = new LaserBeam(this.x, this.y, this.target, currentDamage, this);
-            bullets.push(beam);
-            this.shootFlash = 0.05;
-
-            // ЗВУК ЛАЗЕРА (не чаще раза в 0.1 секунды)
-            if (window.game && window.game.playSound) {
-                if (this._laserSoundTimer <= 0) {
-                    window.game.playSound('shootLaser');
-                    this._laserSoundTimer = 0.1;
-                } else {
-                    this._laserSoundTimer -= deltaTime;
+            // Стрельба с фиксированным интервалом
+            if (this.cooldown <= 0) {
+                const currentDamage = this.baseDamage + this.charge;
+                // Баффы применяются в BaseTower, но для простоты оставляем
+                let finalDamage = currentDamage;
+                if (this.isBuffed) {
+                    finalDamage = Math.floor(currentDamage * this.buffDamageMult);
                 }
+                const beam = new LaserBeam(this.x, this.y, this.target, finalDamage, this);
+                bullets.push(beam);
+                this.shootFlash = 0.05;
+                this.cooldown = this.fireRate; // сброс кулдауна
             }
         }
 
@@ -155,6 +155,7 @@ export class LaserTower extends Tower {
 
     getStats() {
         const stats = super.getStats();
+        stats['Скорострельность'] = `${(1 / this.fireRate).toFixed(0)}/сек`;
         stats['Заряд (макс)'] = this.maxCharge;
         stats['Текущий урон'] = Math.floor(this.baseDamage + this.charge);
         stats['Скорость заряда'] = this.chargeRate + '/сек';

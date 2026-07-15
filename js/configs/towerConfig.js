@@ -13,14 +13,14 @@ export const TOWER_TYPES = {
         desc: 'Высокий урон по одной цели (ранняя игра)'
     },
     flame: {
-        range: 120,
+        range: 140,
         damage: 0,
         fireRate: 0.12,
         cost: 200,
         upgradeCost: 250,
         color: '#ff6600',
         maxLevel: 5,
-        burnDamagePerSec: 10,
+        burnDamagePerSec: 15,
         burnDuration: 2.5,
         burstCount: 3,
         label: 'Огнемёт',

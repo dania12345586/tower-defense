@@ -228,12 +228,12 @@ export function createEnemy(path, type) {
 }
 
 // ============================================================
-// МЕГА-БОСС (способности только для вулканического босса)
+// МЕГА-БОСС (вулканический – нерф)
 // ============================================================
 export class Megaboss extends Enemy {
     constructor(path, isVolcano = false) {
         super(path, 'megaboss');
-        this.hp = isVolcano ? 14000 : 8000;
+        this.hp = isVolcano ? 10000 : 8000;
         this.maxHp = this.hp;
         this.speed = isVolcano ? 22 : 25;
         this.reward = isVolcano ? 750 : 500;
@@ -243,23 +243,17 @@ export class Megaboss extends Enemy {
         this.isVolcano = isVolcano;
         this.type = 'megaboss';
 
-        // ---- ОСНОВНАЯ СПОСОБНОСТЬ (только для вулкана) ----
         if (isVolcano) {
-            // 1. Метание сгустка лавы в башню
-            this.lavaBallCooldown = 4.0; // раз в 4 секунды
+            this.lavaBallCooldown = 5.0;   // было 4.0
             this.lavaBallTimer = 0;
-            this.lavaBallStunDuration = 1.5; // стан 1.5 секунды
-            // 2. Извержение лавы (AoE оглушение)
-            this.eruptionCooldown = 10.0; // раз в 10 секунд
+            this.lavaBallStunDuration = 1.5;
+            this.eruptionCooldown = 12.0;  // было 10.0
             this.eruptionTimer = 0;
             this.eruptionRadius = 200;
-            this.eruptionStunDuration = 2.0; // стан 2 секунды
-
-            // Визуальные эффекты
+            this.eruptionStunDuration = 2.0;
             this.lavaBalls = [];
             this.eruptionEffect = 0;
         } else {
-            // Обычный босс – без дополнительных способностей
             this.lavaBallCooldown = 0;
             this.lavaBallTimer = 0;
             this.eruptionCooldown = 0;
@@ -267,22 +261,14 @@ export class Megaboss extends Enemy {
             this.lavaBalls = [];
             this.eruptionEffect = 0;
         }
-
-        // Оставляем старую способность оглушения в радиусе (она уже есть в Enemy через isSniper, но убираем)
-        // На случай, если старый код остался – мы переопределим update.
     }
 
     update(deltaTime, enemies, towers) {
-        // Вызываем родительский update (движение, горение, стан)
         super.update(deltaTime, enemies, towers);
         if (this.isDead || this.reachedEnd) return;
-
-        // Если босс не вулканический – ничего не делаем
         if (!this.isVolcano) return;
 
-        // ---- НОВЫЕ СПОСОБНОСТИ (только для вулкана) ----
         if (towers && towers.length > 0) {
-            // 1. Метание сгустка лавы
             this.lavaBallTimer += deltaTime;
             if (this.lavaBallTimer >= this.lavaBallCooldown) {
                 this.lavaBallTimer = 0;
@@ -295,13 +281,12 @@ export class Megaboss extends Enemy {
                         targetY: targetTower.y,
                         target: targetTower,
                         progress: 0,
-                        speed: 0.5, // время полёта 0.5 сек
+                        speed: 0.5,
                         stunDuration: this.lavaBallStunDuration
                     });
                 }
             }
 
-            // Обновляем снаряды лавы
             for (let i = this.lavaBalls.length - 1; i >= 0; i--) {
                 const ball = this.lavaBalls[i];
                 ball.progress += deltaTime / ball.speed;
@@ -313,35 +298,28 @@ export class Megaboss extends Enemy {
                 }
             }
 
-            // 2. Извержение лавы (AoE оглушение)
             this.eruptionTimer += deltaTime;
             if (this.eruptionTimer >= this.eruptionCooldown) {
                 this.eruptionTimer = 0;
-                if (towers) {
-                    for (const tower of towers) {
-                        const dx = tower.x - this.x;
-                        const dy = tower.y - this.y;
-                        if (dx*dx + dy*dy <= this.eruptionRadius * this.eruptionRadius) {
-                            tower.stun(this.eruptionStunDuration);
-                        }
+                for (const tower of towers) {
+                    const dx = tower.x - this.x;
+                    const dy = tower.y - this.y;
+                    if (dx*dx + dy*dy <= this.eruptionRadius * this.eruptionRadius) {
+                        tower.stun(this.eruptionStunDuration);
                     }
                 }
                 this.eruptionEffect = 0.5;
             }
         }
 
-        // Обновляем эффект извержения
         if (this.eruptionEffect > 0) {
             this.eruptionEffect -= deltaTime;
         }
     }
 
     draw(ctx) {
-        // Рисуем базового врага
         super.draw(ctx);
-
         if (!this.isVolcano) {
-            // Обычный босс – корона
             ctx.fillStyle = '#ffd700';
             ctx.font = 'bold 30px Arial';
             ctx.textAlign = 'center';
@@ -350,8 +328,6 @@ export class Megaboss extends Enemy {
             return;
         }
 
-        // ---- ВУЛКАНИЧЕСКИЙ БОСС ----
-        // Лавовое свечение
         ctx.shadowColor = '#ff4400';
         ctx.shadowBlur = 30;
         ctx.fillStyle = 'rgba(255, 68, 0, 0.2)';
@@ -360,7 +336,6 @@ export class Megaboss extends Enemy {
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Лавовые прожилки
         ctx.strokeStyle = '#ff8800';
         ctx.lineWidth = 2;
         for (let i = 0; i < 8; i++) {
@@ -373,7 +348,6 @@ export class Megaboss extends Enemy {
             ctx.stroke();
         }
 
-        // Эффект пепла (частицы)
         for (let i = 0; i < 10; i++) {
             const angle = Math.random() * Math.PI * 2;
             const dist = this.radius * (1 + Math.random() * 0.5);
@@ -384,12 +358,10 @@ export class Megaboss extends Enemy {
             ctx.fill();
         }
 
-        // ---- РИСУЕМ СНАРЯДЫ ЛАВЫ ----
         for (const ball of this.lavaBalls) {
             const progress = ball.progress;
             const x = ball.x + (ball.targetX - ball.x) * progress;
             const y = ball.y + (ball.targetY - ball.y) * progress;
-            // Яркий огненный шар
             const grad = ctx.createRadialGradient(x, y, 0, x, y, 12);
             grad.addColorStop(0, '#ffff00');
             grad.addColorStop(0.4, '#ff8800');
@@ -398,23 +370,19 @@ export class Megaboss extends Enemy {
             ctx.beginPath();
             ctx.arc(x, y, 12, 0, Math.PI*2);
             ctx.fill();
-            // Хвост
             ctx.fillStyle = 'rgba(255, 100, 0, 0.3)';
             ctx.beginPath();
             ctx.arc(x - 8, y - 4, 6, 0, Math.PI*2);
             ctx.fill();
         }
 
-        // ---- ЭФФЕКТ ИЗВЕРЖЕНИЯ ----
         if (this.eruptionEffect > 0) {
             const alpha = this.eruptionEffect / 0.5;
-            // Красное кольцо
             ctx.strokeStyle = `rgba(255, 50, 0, ${alpha * 0.8})`;
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.eruptionRadius * (1 - (0.5 - this.eruptionEffect) / 0.5 * 0.3), 0, Math.PI*2);
             ctx.stroke();
-            // Волны
             ctx.strokeStyle = `rgba(255, 100, 0, ${alpha * 0.4})`;
             ctx.lineWidth = 2;
             for (let i = 0; i < 3; i++) {

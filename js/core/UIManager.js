@@ -9,7 +9,6 @@ export class UIManager {
         this.startWaveBtn = document.getElementById('startWave');
     }
 
-    // Обновление основной UI-панели (золото, жизни, волна, монеты)
     updateUI(state) {
         if (this.goldEl) this.goldEl.textContent = `💰 Gold: ${state.gold}`;
         if (this.livesEl) this.livesEl.textContent = `❤️ Lives: ${state.lives}`;
@@ -25,7 +24,6 @@ export class UIManager {
         }
     }
 
-    // Рендер панели выбора башен (левая панель в игре)
     renderShopPanel(selectedTowers, selectedTowerType) {
         if (!this.shopItems) return;
         this.shopItems.innerHTML = '';
@@ -52,7 +50,6 @@ export class UIManager {
         }
     }
 
-    // Показать подсказку (временную)
     showHint(text) {
         if (this.shopHint) {
             this.shopHint.textContent = text;
@@ -62,7 +59,6 @@ export class UIManager {
         }
     }
 
-    // Обновить панель информации о башне (вызывает внешнюю функцию из ui/towerPanel.js)
     updateTowerPanel(tower, gold, onUpgrade, onSell) {
         import('../ui/towerPanel.js').then(({ updateTowerPanel }) => {
             updateTowerPanel(tower, gold, onUpgrade, onSell);

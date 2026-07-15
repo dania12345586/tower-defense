@@ -1,4 +1,3 @@
-// Состояние игры: золото, жизни, волны, враги, башни
 export class GameState {
     constructor() {
         this.gold = 120;
@@ -25,6 +24,9 @@ export class GameState {
         this.achievements = [];
         this.userId = null;
         this.username = null;
+        this.isFirstWave = true;
+        this.waveInProgress = false;
+        this.currentPathIndex = 0;
         this.coinRewards = {
             'default': 25,
             'forest': 25,
@@ -44,18 +46,32 @@ export class GameState {
         this.maxPistols = 4;
         this.laserCount = 0;
         this.maxLasers = 2;
+        // Спутник и дробовик – лимиты в engine, но можно добавить сюда
+        // Оставим в engine для простоты
+        this.players_state = {};
     }
 
+    // Стоимость установки башен
+    getTowerCost(type) {
+        const costs = {
+            pistol: 60,
+            flame: 200,
+            dj: 280,
+            electric: 95,
+            laser: 1000,
+            shotgun: 250,
+            satellite: 400
+        };
+        return costs[type] || 0;
+    }
+
+    // Сброс мультиплеерных флагов
     resetMultiplayer() {
         this.isMultiplayer = false;
         this.syncEnabled = false;
         this.myPlayerId = null;
         this.roomId = null;
         this.isHost = false;
-    }
-
-    getTowerCost(type) {
-        const costs = { pistol: 60, flame: 200, dj: 280, electric: 95, laser: 1000 };
-        return costs[type] || 0;
+        this.players_state = {};
     }
 }

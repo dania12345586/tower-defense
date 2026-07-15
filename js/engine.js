@@ -7,6 +7,7 @@ import { UIManager } from './core/UIManager.js';
 import { getSelectedTowers } from './ui/menu.js';
 import { loadProgress, saveProgress, supabase } from './auth.js';
 import { initSync, sendAction, updateGameState, unsubscribeSync, getGameState } from './sync.js';
+import { updateTowerPanel } from './ui/towerPanel.js';
 import { Bullet, FlameBullet, SoundWaveBullet } from './towers/Bullet.js';
 import { DJTower } from './towers/DJTower.js';
 import { ShotgunTower } from './towers/ShotgunTower.js';
@@ -45,18 +46,10 @@ export class GameEngine {
         this.toggleAdminBtn = document.getElementById('toggleAdminPanel');
         this.leaderboardList = document.getElementById('leaderboardList');
 
-        // Лимиты
         this.shotgunCount = 0;
         this.maxShotguns = 4;
         this.satelliteCount = 0;
         this.maxSatellites = 1;
-
-        // Другие лимиты (из GameState)
-        this.state.maxPistols = 4;
-        this.state.maxFlameTowers = 2;
-        this.state.maxDjTowers = 1;
-        this.state.maxShockers = 3;
-        this.state.maxLasers = 2;
 
         this.loadSounds();
         this.loadMusic();
@@ -213,7 +206,6 @@ export class GameEngine {
             }
         });
 
-        // Делегирование кликов по панели
         document.addEventListener('click', (e) => {
             const item = e.target.closest('.shop-item');
             if (item && item.dataset.tower) {
@@ -231,19 +223,6 @@ export class GameEngine {
         }, { passive: false });
 
         this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType);
-    }
-
-    getTowerCost(type) {
-        const costs = {
-            pistol: 60,
-            flame: 200,
-            dj: 280,
-            electric: 95,
-            laser: 1000,
-            shotgun: 250,
-            satellite: 400
-        };
-        return costs[type] || 0;
     }
 
     async startGame() {
@@ -464,11 +443,45 @@ export class GameEngine {
         this.ui.updateUI(this.state);
     }
 
+    drawBossHealthBars() {
+        const bosses = this.state.enemies.filter(e => 
+            e.isAlive() && ['boss', 'megaboss', 'elite_boss', 'mini_boss'].includes(e.type)
+        );
+        if (bosses.length === 0) return;
+        const barWidth = 300;
+        const barHeight = 18;
+        const startX = (this.canvas.width - barWidth) / 2;
+        let startY = 30;
+        bosses.forEach((boss, index) => {
+            const y = startY + index * (barHeight + 8);
+            const hpPercent = boss.hp / boss.maxHp;
+            this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.lineWidth = 1;
+            this.ctx.fillRect(startX - 2, y - 2, barWidth + 4, barHeight + 4);
+            this.ctx.strokeRect(startX - 2, y - 2, barWidth + 4, barHeight + 4);
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.fillRect(startX, y, barWidth, barHeight);
+            this.ctx.fillStyle = '#00ff00';
+            this.ctx.fillRect(startX, y, barWidth * hpPercent, barHeight);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.textAlign = 'left';
+            this.ctx.textBaseline = 'middle';
+            const name = boss.type.charAt(0).toUpperCase() + boss.type.slice(1);
+            this.ctx.fillText(`${name} (${Math.floor(boss.hp)}/${Math.floor(boss.maxHp)})`, startX + 6, y + barHeight/2);
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(`${Math.round(hpPercent*100)}%`, startX + barWidth - 6, y + barHeight/2);
+        });
+    }
+
     draw() {
         if (!this.map) return;
         this.ctx.fillStyle = '#0a0a0a';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.map.draw(this.ctx);
+
+        this.drawBossHealthBars();
 
         for (const t of this.state.towers) t.draw(this.ctx);
         for (const e of this.state.enemies) e.draw(this.ctx);
@@ -478,16 +491,16 @@ export class GameEngine {
             const { gridX, gridY } = this.hoveredCell;
             const { x, y } = this.map.gridToPixel(gridX, gridY);
             const canBuild = this.map.canBuildAt(gridX, gridY);
-            const cost = this.getTowerCost(this.selectedTowerType);
+            const cost = this.state.getTowerCost(this.selectedTowerType);
             const enoughGold = this.state.gold >= cost;
             let previewRange = 150;
             if (this.selectedTowerType === 'pistol') previewRange = 170;
-            else if (this.selectedTowerType === 'flame') previewRange = 120;
+            else if (this.selectedTowerType === 'flame') previewRange = 140;
             else if (this.selectedTowerType === 'dj') previewRange = 140;
             else if (this.selectedTowerType === 'electric') previewRange = 155;
             else if (this.selectedTowerType === 'laser') previewRange = 220;
             else if (this.selectedTowerType === 'shotgun') previewRange = 100;
-            else if (this.selectedTowerType === 'satellite') previewRange = 150; // внутренний радиус баффа
+            else if (this.selectedTowerType === 'satellite') previewRange = 150;
 
             this.ctx.fillStyle = canBuild && enoughGold ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)';
             this.ctx.beginPath();
@@ -541,7 +554,7 @@ export class GameEngine {
             }
             const { gridX, gridY } = this.map.pixelToGrid(x, y);
             if (this.map.canBuildAt(gridX, gridY)) {
-                const cost = this.getTowerCost(this.selectedTowerType);
+                const cost = this.state.getTowerCost(this.selectedTowerType);
                 if (this.state.gold < cost) {
                     this.ui.showHint('Недостаточно золота!');
                     return;
@@ -625,7 +638,7 @@ export class GameEngine {
         if (this.selectedTowerType === type) {
             this.selectedTowerType = null;
         } else {
-            const cost = this.getTowerCost(type);
+            const cost = this.state.getTowerCost(type);
             if (this.state.gold < cost) {
                 this.ui.showHint('Недостаточно золота!');
                 setTimeout(() => this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType), 1000);
@@ -654,7 +667,7 @@ export class GameEngine {
     }
 
     updateTowerPanel() {
-        this.ui.updateTowerPanel(
+        updateTowerPanel(
             this.selectedTower,
             this.state.gold,
             () => this.towerManager.upgrade(this.selectedTower),

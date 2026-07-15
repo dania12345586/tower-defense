@@ -80,10 +80,9 @@ export class WaveManager {
             this.state.gameEnded = true;
             const reward = this.state.coinRewards[this.state.selectedMap] || 0;
             this.state.coins += reward;
-            // Очистка комнаты будет в engine.js
+            // Очистка комнаты будет в engine
             return;
         }
-        // Автозапуск следующей волны через 1.5 сек
         setTimeout(() => {
             if (!this.state.gameOver && !this.state.victory && !this.waveInProgress) {
                 this.startWave();

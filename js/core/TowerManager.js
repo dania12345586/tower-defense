@@ -8,7 +8,7 @@ export class TowerManager {
         this.ui = uiManager;
     }
 
-    canBuild(type) {
+    canBuild(type, extraCounts = {}) {
         const { gold, pistolCount, maxPistols, flameTowerCount, maxFlameTowers,
                 djTowerCount, maxDjTowers, shockerCount, maxShockers,
                 laserCount, maxLasers } = this.state;
@@ -48,12 +48,7 @@ export class TowerManager {
                     return false;
                 }
                 break;
-            case 'shotgun':
-                // лимит проверяется в engine
-                break;
-            case 'satellite':
-                // лимит проверяется в engine
-                break;
+            // shotgun и satellite проверяются в engine
         }
         return true;
     }
@@ -91,11 +86,9 @@ export class TowerManager {
                 break;
             case 'shotgun':
                 tower = new ShotgunTower(tx, ty);
-                // счётчик в engine
                 break;
             case 'satellite':
                 tower = new SatelliteTower(tx, ty);
-                // счётчик в engine
                 break;
             default:
                 return null;

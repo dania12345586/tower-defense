@@ -118,8 +118,8 @@ export class SatelliteTower extends Tower {
         this.attackRange = 1000;
         this.range = this.attackRange;
         this.baseRange = this.attackRange;
-        this.baseDamage = 30;
-        this.damage = 30;
+        this.baseDamage = 60;          // было 30
+        this.damage = 60;
         this.fireRate = 2.0;
         this.explosionRadius = 50;
         this.buffPercent = 8;
@@ -220,7 +220,6 @@ export class SatelliteTower extends Tower {
         const r = 15;
         const time = Date.now() / 1000;
 
-        // ---- Анимация спутника (уже есть) ----
         if (this.level >= 2) {
             ctx.strokeStyle = '#00ccff';
             ctx.lineWidth = 1.5;

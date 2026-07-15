@@ -7,16 +7,12 @@ let onStateUpdate = null;
 let isHost = false;
 let isSyncing = false;
 
-// Инициализация синхронизации
 export function initSync(roomId, userId, host, onUpdate) {
     currentRoomId = roomId;
     isHost = host;
     onStateUpdate = onUpdate;
     isSyncing = true;
-    
     console.log(`🔄 Инициализация синхронизации для комнаты ${roomId}, хост: ${host}`);
-    
-    // Подписываемся на изменения состояния игры
     if (syncChannel) supabase.removeChannel(syncChannel);
     syncChannel = supabase
         .channel(`game_state:${roomId}`)
@@ -32,8 +28,7 @@ export function initSync(roomId, userId, host, onUpdate) {
         .subscribe((status) => {
             console.log('📡 Статус синхронизации игры:', status);
         });
-    
-    // Подписываемся на действия игроков
+
     if (actionChannel) supabase.removeChannel(actionChannel);
     actionChannel = supabase
         .channel(`game_actions:${roomId}`)
@@ -52,14 +47,12 @@ export function initSync(roomId, userId, host, onUpdate) {
         .subscribe((status) => {
             console.log('📡 Статус подписки на действия:', status);
         });
-    
-    // Если хост, создаём начальное состояние
+
     if (isHost) {
         createInitialState(roomId);
     }
 }
 
-// Создать начальное состояние игры (только хост)
 async function createInitialState(roomId) {
     console.log('👑 Хост создаёт начальное состояние...');
     const { data: room, error: roomError } = await supabase
@@ -68,13 +61,19 @@ async function createInitialState(roomId) {
         .eq('id', roomId)
         .single();
     if (roomError) throw roomError;
-    
     const players = room.players || [];
+    const { data: playerData } = await supabase
+        .from('players')
+        .select('id, username')
+        .in('id', players);
+    const names = {};
+    playerData.forEach(p => { names[p.id] = p.username; });
+
     const playersState = {};
     players.forEach(id => {
-        playersState[id] = { gold: 80, lives: 20, score: 0 };
+        playersState[id] = { gold: 80, lives: 20, score: 0, username: names[id] || id.slice(0,6) };
     });
-    
+
     const state = {
         room_id: roomId,
         map: room.map || 'default',
@@ -86,7 +85,6 @@ async function createInitialState(roomId) {
         game_over: false,
         victory: false
     };
-    
     const { error } = await supabase
         .from('game_state')
         .upsert(state, { onConflict: 'room_id' });
@@ -94,7 +92,6 @@ async function createInitialState(roomId) {
     console.log('✅ Начальное состояние создано');
 }
 
-// Отписаться от синхронизации
 export function unsubscribeSync() {
     console.log('🔄 Отписка от синхронизации');
     if (syncChannel) supabase.removeChannel(syncChannel);
@@ -104,13 +101,11 @@ export function unsubscribeSync() {
     isSyncing = false;
 }
 
-// Отправить действие игрока
 export async function sendAction(actionType, data) {
     if (!currentRoomId || !isSyncing) return;
     const user = getCurrentUser();
     const playerId = user ? user.id : null;
     if (!playerId) return;
-    
     const action = {
         room_id: currentRoomId,
         player_id: playerId,
@@ -124,7 +119,6 @@ export async function sendAction(actionType, data) {
     if (error) console.error('Ошибка отправки действия:', error);
 }
 
-// Обновить состояние игры (только хост)
 export async function updateGameState(newState) {
     if (!isHost || !currentRoomId || !isSyncing) return;
     console.log('👑 Хост обновляет состояние:', newState);
@@ -135,7 +129,6 @@ export async function updateGameState(newState) {
     if (error) console.error('Ошибка обновления состояния:', error);
 }
 
-// Получить текущее состояние игры
 export async function getGameState(roomId) {
     const { data, error } = await supabase
         .from('game_state')
@@ -146,7 +139,6 @@ export async function getGameState(roomId) {
     return data;
 }
 
-// Получить текущего пользователя (локально из localStorage)
 function getCurrentUser() {
     const data = localStorage.getItem('user');
     if (!data) return null;

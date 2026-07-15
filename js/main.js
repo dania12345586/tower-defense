@@ -9,14 +9,19 @@ const mapSelectMenu = document.getElementById('mapSelectMenu');
 const gameContainer = document.getElementById('gameContainer');
 const authMessage = document.getElementById('authMessage');
 
-// ----- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ -----
 const MAX_TOWERS = 4;
 let selectedTowers = ['pistol', 'flame', 'dj'];
 let unlockedTowers = ['pistol', 'flame', 'dj'];
 let coins = 0;
 let userId = null;
+let rememberMe = true;
 
-// ----- ФУНКЦИЯ ЗАПУСКА ИГРЫ -----
+// ----- Запоминание -----
+document.getElementById('rememberMe').addEventListener('change', (e) => {
+    rememberMe = e.target.checked;
+});
+
+// ----- Запуск игры -----
 function startGameEngine() {
     if (!window.game) {
         window.game = new GameEngine();
@@ -24,7 +29,7 @@ function startGameEngine() {
     }
 }
 
-// ----- ОБНОВЛЕНИЕ МОНЕТ -----
+// ----- Монеты -----
 function updateCoinsDisplay() {
     const coinsDisplay = document.getElementById('coinsDisplay');
     if (coinsDisplay) coinsDisplay.textContent = coins;
@@ -32,7 +37,7 @@ function updateCoinsDisplay() {
     renderShopModal();
 }
 
-// ----- ОТОБРАЖЕНИЕ ВЫБРАННЫХ БАШЕН -----
+// ----- Отображение выбранных башен -----
 function renderSelectedTowers() {
     const container = document.getElementById('selectedTowersDisplay');
     if (!container) return;
@@ -51,7 +56,7 @@ function renderSelectedTowers() {
     });
 }
 
-// ----- ОБНОВЛЕНИЕ МОДАЛКИ ВЫБОРА БАШЕН -----
+// ----- Модалка выбора башен -----
 function updateTowerSelectionModal() {
     document.querySelectorAll('#towerSelectModal .tower-card').forEach(card => {
         const type = card.dataset.tower;
@@ -61,7 +66,6 @@ function updateTowerSelectionModal() {
     renderSelectedTowers();
     window._selectedTowers = selectedTowers;
 }
-
 function updateModalState() {
     document.querySelectorAll('#towerSelectModal .tower-card').forEach(card => {
         const type = card.dataset.tower;
@@ -69,17 +73,14 @@ function updateModalState() {
         card.style.display = unlockedTowers.includes(type) ? 'flex' : 'none';
     });
 }
-
 function openTowerSelectModal() {
     document.getElementById('towerSelectModal').style.display = 'flex';
     updateModalState();
     document.getElementById('towerSelectWarning').textContent = '';
 }
-
 function closeTowerSelectModal() {
     document.getElementById('towerSelectModal').style.display = 'none';
 }
-
 function handleTowerCardClick(e) {
     const card = e.target.closest('.tower-card');
     if (!card) return;
@@ -99,7 +100,6 @@ function handleTowerCardClick(e) {
         document.getElementById('towerSelectWarning').textContent = '';
     }
 }
-
 function saveTowerSelection() {
     if (selectedTowers.length === 0) {
         document.getElementById('towerSelectWarning').textContent = '❌ Выберите хотя бы одну башню!';
@@ -109,7 +109,6 @@ function saveTowerSelection() {
     renderSelectedTowers();
     closeTowerSelectModal();
 }
-
 function cancelTowerSelection() {
     selectedTowers = (window._selectedTowers || ['pistol', 'flame', 'dj']).filter(t => unlockedTowers.includes(t));
     updateModalState();
@@ -117,7 +116,7 @@ function cancelTowerSelection() {
     closeTowerSelectModal();
 }
 
-// ----- МАГАЗИН -----
+// ----- Магазин -----
 function openShopModal() {
     document.getElementById('shopModal').style.display = 'flex';
     renderShopModal();
@@ -159,7 +158,6 @@ function renderShopModal() {
     });
     document.getElementById('shopCoinsDisplay').textContent = coins;
 }
-
 async function buyItem(itemId, cost) {
     if (coins < cost) { alert('Недостаточно монет!'); return; }
     if (unlockedTowers.includes(itemId)) { alert('Уже куплено!'); return; }
@@ -176,7 +174,7 @@ async function buyItem(itemId, cost) {
     alert(`✅ ${itemId} куплен!`);
 }
 
-// ----- ЗАГРУЗКА ПОЛЬЗОВАТЕЛЯ (после логина) -----
+// ----- Загрузка пользователя -----
 async function loadUserData() {
     const savedUser = getCurrentUser();
     if (!savedUser) return;
@@ -201,12 +199,11 @@ async function loadUserData() {
     updateTowerSelectionModal();
 }
 
-// ----- АВТОРИЗАЦИЯ (теперь всегда показываем экран входа) -----
-// При загрузке всегда показываем экран авторизации (авто-вход отключён)
-clearCurrentUser(); // очищаем локальное хранилище, чтобы не было авто-входа
-authScreen.style.display = 'flex';
+// ----- Авторизация -----
+const savedUser = getCurrentUser();
+if (savedUser) loadUserData();
+else clearCurrentUser();
 
-// Обработчик регистрации
 document.getElementById('authRegisterBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
@@ -220,28 +217,32 @@ document.getElementById('authRegisterBtn').addEventListener('click', async () =>
     } catch (e) { authMessage.textContent = '❌ ' + e.message; }
 });
 
-// Обработчик входа
 document.getElementById('authLoginBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
     if (!username || !password) { authMessage.textContent = 'Введите имя и пароль!'; return; }
     try {
         const user = await login(username, password);
-        setCurrentUser(user);
-        await loadUserData(); // после входа загружаем данные
-        authMessage.textContent = ''; // очищаем сообщение
+        if (rememberMe) {
+            setCurrentUser(user);
+        } else {
+            clearCurrentUser();
+            window._userId = user.id;
+            window._username = user.username;
+        }
+        loadUserData();
     } catch (e) { authMessage.textContent = '❌ ' + e.message; }
 });
 
-// ----- КНОПКА ВЫХОДА -----
+// ----- Выход -----
 document.getElementById('logoutBtn').addEventListener('click', () => {
     if (confirm('Выйти из аккаунта?')) {
         clearCurrentUser();
-        location.reload(); // перезагружаем страницу, показываем экран входа
+        location.reload();
     }
 });
 
-// ----- КНОПКИ МЕНЮ -----
+// ----- Кнопки меню -----
 document.getElementById('startGameBtn').addEventListener('click', () => {
     if (selectedTowers.length === 0) { alert('Выберите хотя бы одну башню!'); return; }
     window._selectedTowers = selectedTowers;
@@ -262,10 +263,10 @@ document.getElementById('towerSelectModal').addEventListener('click', (e) => {
 });
 document.getElementById('towerSelectModal').addEventListener('click', handleTowerCardClick);
 
-// ----- МУЛЬТИПЛЕЕР -----
+// ----- Мультиплеер -----
 document.getElementById('multiplayerBtn').addEventListener('click', () => {
-    const user = getCurrentUser();
-    if (!user) { alert('Войдите в аккаунт!'); return; }
+    const user = getCurrentUser() || { id: window._userId };
+    if (!user?.id) { alert('Войдите в аккаунт!'); return; }
     document.getElementById('roomListModal').style.display = 'flex';
     renderRoomList();
 });
@@ -274,7 +275,7 @@ document.getElementById('closeRoomListBtn').addEventListener('click', () => {
     document.getElementById('roomListModal').style.display = 'none';
 });
 
-// ----- ПОДСВЕТКА КАРТ -----
+// ----- Подсветка карт -----
 document.querySelectorAll('.map-card').forEach(card => {
     card.addEventListener('click', function() {
         document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
@@ -284,6 +285,5 @@ document.querySelectorAll('.map-card').forEach(card => {
     });
 });
 
-// Инициализация (при пустом пользователе)
 window._selectedTowers = selectedTowers;
 renderSelectedTowers();

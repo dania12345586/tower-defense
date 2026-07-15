@@ -1,3 +1,4 @@
+
 import { GameMap } from './map.js';
 import { GameState } from './core/GameState.js';
 import { TowerManager } from './core/TowerManager.js';
@@ -43,6 +44,7 @@ export class GameEngine {
         this.speedBtn = document.getElementById('speedBtn');
         this.startWaveBtn = document.getElementById('startWave');
         this.toggleAdminBtn = document.getElementById('toggleAdminPanel');
+        this.leaderboardList = document.getElementById('leaderboardList');
 
         this.loadSounds();
         this.loadMusic();
@@ -149,7 +151,6 @@ export class GameEngine {
             });
         }
 
-        // ===== ТОЛЬКО ХОСТ МЕНЯЕТ СКОРОСТЬ =====
         this.speedBtn.addEventListener('click', () => {
             if (this.state.isMultiplayer && !this.state.isHost) {
                 this.ui.showHint('Только хост может менять скорость!');
@@ -245,6 +246,7 @@ export class GameEngine {
 
             initSync(this.state.roomId, this.state.myPlayerId, this.state.isHost, (newState) => {
                 this.applyGameState(newState);
+                this.renderLeaderboard();
             });
 
             if (!this.state.isHost) {
@@ -283,7 +285,8 @@ export class GameEngine {
         this.enemyManager = new EnemyManager(this.state, this.map, this.ui);
         this.waveManager = new WaveManager(this.state, this.enemyManager, this.ui);
 
-        // ===== ПОКАЗЫВАЕМ КНОПКУ СТАРТА ВОЛНЫ ТОЛЬКО ХОСТУ =====
+        // Кнопка Start Wave только для хоста
+        console.log('isMultiplayer:', this.state.isMultiplayer, 'isHost:', this.state.isHost);
         if (this.state.isMultiplayer && !this.state.isHost) {
             this.startWaveBtn.style.display = 'none';
         } else {
@@ -294,6 +297,7 @@ export class GameEngine {
 
         this.ui.renderShop(this.state);
         this.ui.updateUI(this.state);
+        this.renderLeaderboard();
         this.lastTime = performance.now();
         this.gameLoop();
     }
@@ -303,6 +307,47 @@ export class GameEngine {
         this.state.wave = state.wave || 1;
         this.state.waveIndex = state.wave_index || 0;
         this.state.selectedMap = state.map || 'default';
+        this.state.players_state = state.players_state || {};
+        this.renderLeaderboard();
+    }
+
+    renderLeaderboard() {
+        if (!this.leaderboardList) return;
+        const players = this.state.players_state || {};
+        const ids = Object.keys(players);
+        if (ids.length === 0) {
+            this.leaderboardList.innerHTML = '<div style="color:#888;">Нет игроков</div>';
+            return;
+        }
+        let html = '';
+        for (const id of ids) {
+            const data = players[id];
+            const name = data.username || id.slice(0,6);
+            const gold = data.gold || 0;
+            const isYou = (id === this.state.myPlayerId);
+            html += `
+                <div class="leaderboard-player" data-playerid="${id}">
+                    <span class="name">${name} ${isYou ? '🌟' : ''}</span>
+                    <span class="gold">💰${gold}</span>
+                </div>
+            `;
+        }
+        this.leaderboardList.innerHTML = html;
+        this.leaderboardList.querySelectorAll('.leaderboard-player').forEach(el => {
+            el.addEventListener('click', () => {
+                const playerId = el.dataset.playerid;
+                this.selectLeaderboardPlayer(playerId);
+                this.leaderboardList.querySelectorAll('.leaderboard-player').forEach(p => p.classList.remove('selected'));
+                el.classList.add('selected');
+            });
+        });
+    }
+
+    selectLeaderboardPlayer(playerId) {
+        // Подсветить башни этого игрока (если в башнях хранится ownerId)
+        // Пока заглушка
+        console.log('Выбран игрок:', playerId);
+        // В будущем: this.state.towers.forEach(t => t.highlight = (t.ownerId === playerId));
     }
 
     handleAction(action) {
@@ -425,17 +470,13 @@ export class GameEngine {
             const { gridX, gridY } = this.map.pixelToGrid(x, y);
             if (this.map.canBuildAt(gridX, gridY)) {
                 const cost = this.state.getTowerCost(this.selectedTowerType);
-                // ===== ПРОВЕРКА ДЕНЕГ ПЕРЕД ПОСТРОЙКОЙ =====
                 if (this.state.gold < cost) {
                     this.ui.showHint('Недостаточно золота!');
                     return;
                 }
                 const { x: tx, y: ty } = this.map.gridToPixel(gridX, gridY);
-                // ===== СТРОИМ БАШНЮ (ВНУТРИ СПИШЕТСЯ ЗОЛОТО) =====
                 const tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
-                if (tower) {
-                    this.ui.updateUI(this.state);
-                }
+                if (tower) this.ui.updateUI(this.state);
             }
             return;
         }
@@ -510,44 +551,29 @@ export class GameEngine {
     async cleanupMultiplayerRoom() {
         if (!this.state.isMultiplayer || !this.state.roomId) return;
         try {
-            await supabase
-                .from('rooms')
-                .delete()
-                .eq('id', this.state.roomId);
-            await supabase
-                .from('room_votes')
-                .delete()
-                .eq('room_id', this.state.roomId);
-            await supabase
-                .from('game_state')
-                .delete()
-                .eq('room_id', this.state.roomId);
+            await supabase.from('rooms').delete().eq('id', this.state.roomId);
+            await supabase.from('room_votes').delete().eq('room_id', this.state.roomId);
+            await supabase.from('game_state').delete().eq('room_id', this.state.roomId);
             unsubscribeSync();
         } catch (e) {
-            console.warn('Ошибка очистки мультиплеерной комнаты:', e);
+            console.warn('Ошибка очистки комнаты:', e);
         }
     }
 
     async saveCoins() {
-        if (!this.state.userId) {
-            console.warn('Нет userId, сохранение невозможно');
-            return;
-        }
+        if (!this.state.userId) return;
         try {
             await saveProgress(this.state.userId, {
                 coins: this.state.coins,
                 unlocked_towers: this.state.unlockedTowers,
                 achievements: this.state.achievements
             });
-        } catch (e) {
-            console.warn('Не удалось сохранить монеты:', e);
-        }
+        } catch (e) { console.warn(e); }
     }
 
     showMenuButton() {
         if (this.menuButtonCreated) return;
         this.menuButtonCreated = true;
-
         const menuBtn = document.createElement('button');
         menuBtn.id = 'menuBtn';
         menuBtn.textContent = 'В меню';

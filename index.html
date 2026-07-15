@@ -14,6 +14,10 @@
             <div id="authForm">
                 <input type="text" id="authUsername" placeholder="Имя пользователя" class="auth-input">
                 <input type="password" id="authPassword" placeholder="Пароль" class="auth-input">
+                <div style="display:flex; align-items:center; gap:8px; margin:10px 0;">
+                    <input type="checkbox" id="rememberMe" checked>
+                    <label for="rememberMe" style="color:#aaa; font-size:0.9rem;">Запомнить меня</label>
+                </div>
                 <div class="auth-buttons">
                     <button id="authLoginBtn" class="btn">Войти</button>
                     <button id="authRegisterBtn" class="btn">Зарегистрироваться</button>
@@ -26,17 +30,14 @@
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="menu-overlay" style="display: none;">
         <div class="menu-box menu-main" style="position:relative;">
-            <!-- Кнопка выхода -->
             <button id="logoutBtn" style="position:absolute; top:10px; right:10px; background:transparent; border:none; color:#ff6b6b; font-size:1.8rem; cursor:pointer; z-index:10; transition:transform 0.2s;" title="Выйти из аккаунта">🚪</button>
 
-            <!-- Левая колонка -->
             <div class="menu-column menu-column-left">
                 <button id="openTowerSelectBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">🏗️ Выбрать башни (макс. 4)</button>
                 <div id="selectedTowersDisplay" style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; min-height:50px;"></div>
                 <div style="font-size:0.8rem; color:#888; margin-top:8px;">Нажмите, чтобы изменить набор</div>
             </div>
 
-            <!-- Центр -->
             <div class="menu-column menu-column-center">
                 <h1 class="menu-title">🏰 Tower Defense</h1>
                 <div class="menu-coins">
@@ -47,7 +48,6 @@
                 <div style="margin-top:12px; font-size:0.8rem; color:#aaa;">Выберите башни слева</div>
             </div>
 
-            <!-- Правая колонка -->
             <div class="menu-column menu-column-right">
                 <h2 style="color:#ffd700; font-size:1.3rem; margin-bottom:12px;">🛒 Магазин</h2>
                 <button id="shopBtn" class="btn" style="background:#8e44ad; width:100%; padding:16px; font-size:1.2rem;">Открыть магазин</button>
@@ -256,6 +256,11 @@
             </div>
             <div class="canvas-wrapper">
                 <canvas id="gameCanvas" width="800" height="600"></canvas>
+                <!-- ЛИДЕРБОРД -->
+                <div id="leaderboard" style="position:absolute; right:-220px; top:0; width:200px; background:rgba(20,20,40,0.95); border:1px solid #555; border-radius:8px; padding:10px; backdrop-filter:blur(4px); max-height:300px; overflow-y:auto; font-size:0.85rem;">
+                    <h4 style="color:#ffd700; margin:0 0 8px 0; text-align:center;">👥 Игроки</h4>
+                    <div id="leaderboardList"></div>
+                </div>
                 <div id="towerPanel" style="display: none;">
                     <h3>Башня <span id="towerLevel">Ур. 1</span></h3>
                     <div class="tower-info" id="towerInfo"></div>

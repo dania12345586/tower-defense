@@ -157,6 +157,57 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
 #upgradeBtn { width:100%; margin-top:10px; background:#8a6a2a; border:1px solid #ffd700; font-size:0.8rem; padding:8px; min-height:40px; }
 #upgradeBtn:disabled { background:#4a4a4a; border-color:#666; color:#888; }
 
+/* ЛИДЕРБОРД */
+#leaderboard {
+    position: absolute;
+    right: -220px;
+    top: 0;
+    width: 200px;
+    background: rgba(20,20,40,0.95);
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 10px;
+    backdrop-filter: blur(4px);
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    color: #ccc;
+}
+#leaderboard h4 {
+    color: #ffd700;
+    margin: 0 0 8px 0;
+    text-align: center;
+}
+.leaderboard-player {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.leaderboard-player:hover {
+    background: rgba(255,255,255,0.1);
+}
+.leaderboard-player.selected {
+    background: rgba(255,215,0,0.2);
+    border-left: 3px solid #ffd700;
+}
+.leaderboard-player .name {
+    font-weight: bold;
+}
+.leaderboard-player .gold {
+    color: #ffd700;
+}
+.leaderboard-player .status {
+    font-size: 0.7rem;
+    color: #2ecc71;
+}
+.leaderboard-player .status.offline {
+    color: #e74c3c;
+}
+
 @media (max-width:768px) {
     .menu-box { padding:20px; }
     .menu-box h1 { font-size:2rem; }
@@ -179,6 +230,12 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     .btn { padding:6px 12px; font-size:0.8rem; min-height:36px; min-width:36px; }
     .tower-select-grid { grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); }
     .map-select-grid { grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); }
+    #leaderboard {
+        position: static;
+        width: 100%;
+        margin-top: 10px;
+        max-height: 150px;
+    }
 }
 @media (max-width:480px) {
     .tower-card .tower-icon { font-size:36px; }
@@ -198,7 +255,6 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     align-items: stretch;
     position: relative;
 }
-
 .menu-column {
     flex: 1;
     display: flex;
@@ -207,27 +263,10 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     justify-content: center;
     min-width: 0;
 }
-
-.menu-column-left {
-    align-items: stretch;
-    text-align: center;
-}
-
-.menu-column-center {
-    text-align: center;
-}
-
-.menu-column-right {
-    text-align: center;
-}
-
-.menu-title {
-    font-size: 3rem;
-    color: #ffd700;
-    margin: 0 0 10px 0;
-    letter-spacing: 2px;
-}
-
+.menu-column-left { align-items: stretch; text-align: center; }
+.menu-column-center { text-align: center; }
+.menu-column-right { text-align: center; }
+.menu-title { font-size: 3rem; color: #ffd700; margin: 0 0 10px 0; letter-spacing: 2px; }
 .menu-coins {
     font-size: 1.5rem;
     color: #ffd700;
@@ -248,7 +287,6 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     0% { filter: drop-shadow(0 0 4px rgba(255,215,0,0.3)); transform: scale(1); }
     100% { filter: drop-shadow(0 0 16px rgba(255,215,0,0.9)); transform: scale(1.05); }
 }
-
 #selectedTowersDisplay {
     display: flex;
     flex-wrap: wrap;
@@ -264,47 +302,6 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     padding: 6px 10px;
     border: 1px solid #555;
 }
-
-/* Адаптация для мобильных */
-@media (max-width: 768px) {
-    .menu-main {
-        flex-direction: column;
-        gap: 20px;
-        padding: 20px;
-    }
-    .menu-column {
-        width: 100%;
-    }
-    .menu-column-left {
-        order: 2;
-    }
-    .menu-column-center {
-        order: 1;
-    }
-    .menu-column-right {
-        order: 3;
-    }
-    .menu-title {
-        font-size: 2.2rem;
-    }
-}
-
-/* Стили для модалки магазина */
-.shop-item-modal {
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid #444;
-}
-.shop-item-modal .btn {
-    padding: 4px 16px;
-    font-size: 0.9rem;
-}
-
-/* Кнопка выхода */
 #logoutBtn {
     position: absolute;
     top: 10px;
@@ -317,6 +314,24 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     z-index: 10;
     transition: transform 0.2s;
 }
-#logoutBtn:hover {
-    transform: scale(1.2);
+#logoutBtn:hover { transform: scale(1.2); }
+
+@media (max-width: 768px) {
+    .menu-main { flex-direction: column; gap: 20px; padding: 20px; }
+    .menu-column { width: 100%; }
+    .menu-column-left { order: 2; }
+    .menu-column-center { order: 1; }
+    .menu-column-right { order: 3; }
+    .menu-title { font-size: 2.2rem; }
 }
+
+.shop-item-modal {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #444;
+}
+.shop-item-modal .btn { padding: 4px 16px; font-size: 0.9rem; }

@@ -277,23 +277,33 @@ if (savedUser) {
     clearCurrentUser();
 }
 
+// ---- Исправленная регистрация с trim() ----
 document.getElementById('authRegisterBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
-    if (!username || !password) { authMessage.textContent = 'Заполните все поля!'; return; }
+    if (!username || !password) {
+        authMessage.textContent = 'Заполните все поля!';
+        return;
+    }
     try {
         await register(username, password);
         authMessage.style.color = '#00ff88';
         authMessage.textContent = '✅ Регистрация успешна! Теперь войдите.';
         document.getElementById('authUsername').value = '';
         document.getElementById('authPassword').value = '';
-    } catch (e) { authMessage.textContent = '❌ ' + e.message; }
+    } catch (e) {
+        authMessage.textContent = '❌ ' + e.message;
+    }
 });
 
+// ---- Исправленный вход с trim() ----
 document.getElementById('authLoginBtn').addEventListener('click', async () => {
     const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value.trim();
-    if (!username || !password) { authMessage.textContent = 'Введите имя и пароль!'; return; }
+    if (!username || !password) {
+        authMessage.textContent = 'Введите имя и пароль!';
+        return;
+    }
     try {
         const user = await login(username, password);
         if (rememberMe) {
@@ -304,7 +314,9 @@ document.getElementById('authLoginBtn').addEventListener('click', async () => {
             window._username = user.username;
         }
         await initGameWithUser(user);
-    } catch (e) { authMessage.textContent = '❌ ' + e.message; }
+    } catch (e) {
+        authMessage.textContent = '❌ ' + e.message;
+    }
 });
 
 document.getElementById('logoutBtn').addEventListener('click', () => {

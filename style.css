@@ -208,7 +208,8 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     color: #e74c3c;
 }
 
-@media (max-width:768px) {
+/* ===== МОБИЛЬНЫЕ СТИЛИ ===== */
+@media (max-width: 768px) {
     .menu-box { padding:20px; }
     .menu-box h1 { font-size:2rem; }
     .menu-box h2 { font-size:1.5rem; }
@@ -221,28 +222,72 @@ body { background:#0a0a0a; font-family:'Arial',sans-serif; display:flex; justify
     .shop-item span { font-size:0.8rem; }
     .shop-item small { font-size:0.7rem; }
     .shop-hint { font-size:0.7rem; margin-top:4px; width:100%; text-align:center; }
-    #towerPanel { top:8px; right:8px; left:8px; min-width:unset; padding:10px 12px; font-size:0.8rem; }
-    #towerPanel h3 { font-size:1rem; }
-    .tower-info p { font-size:0.75rem; }
-    #upgradeBtn { font-size:0.75rem; padding:6px; min-height:36px; }
     .ui-panel { padding:8px 12px; gap:6px; }
     .stats { font-size:0.85rem; gap:8px; }
     .btn { padding:6px 12px; font-size:0.8rem; min-height:36px; min-width:36px; }
     .tower-select-grid { grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); }
     .map-select-grid { grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); }
+
+    /* ---- ПАНЕЛЬ БАШНИ НА МОБИЛЬНЫХ ---- */
+    #towerPanel {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        top: auto;
+        width: auto;
+        max-width: 100%;
+        min-width: unset;
+        padding: 10px 12px;
+        font-size: 0.75rem;
+        border-radius: 8px;
+        background: rgba(20,20,40,0.98);
+        border: 2px solid #6a6a9a;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.9);
+    }
+    #towerPanel h3 {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+        padding-bottom: 4px;
+    }
+    .tower-info p {
+        font-size: 0.7rem;
+        margin: 2px 0;
+    }
+    #upgradeBtn {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        min-height: 30px;
+        margin-top: 4px;
+    }
+    #sellBtn {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        min-height: 30px;
+        margin-top: 2px;
+    }
+    /* Убираем лишние отступы */
+    #towerPanel .tower-info {
+        margin-bottom: 4px;
+    }
+    #towerPanel .btn {
+        min-height: 30px;
+        min-width: 30px;
+        padding: 4px 8px;
+    }
+}
+@media (max-width: 480px) {
+    .tower-card .tower-icon { font-size:36px; }
+    .tower-card .tower-name { font-size:15px; }
+    .tower-card .tower-cost { font-size:13px; }
+    .map-card .map-preview { height:50px; font-size:20px; }
+    .map-card .map-name { font-size:12px; }
     #leaderboard {
         position: static;
         width: 100%;
         margin-top: 10px;
         max-height: 150px;
     }
-}
-@media (max-width:480px) {
-    .tower-card .tower-icon { font-size:36px; }
-    .tower-card .tower-name { font-size:15px; }
-    .tower-card .tower-cost { font-size:13px; }
-    .map-card .map-preview { height:50px; font-size:20px; }
-    .map-card .map-name { font-size:12px; }
 }
 
 /* ===== НОВОЕ ГЛАВНОЕ МЕНЮ (3 колонки) ===== */

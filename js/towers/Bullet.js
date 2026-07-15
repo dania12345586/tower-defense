@@ -60,7 +60,7 @@ export class Bullet {
 }
 
 // ============================================================
-// ОГНЕННЫЙ СНАРЯД
+// ОГНЕННЫЙ СНАРЯД (исправлен)
 // ============================================================
 export class FlameBullet extends Bullet {
     constructor(startX, startY, target, damage, burnDuration, burnDPS, color, radius, speed, angle, maxRange, tower) {
@@ -71,7 +71,7 @@ export class FlameBullet extends Bullet {
         this.burnDuration = burnDuration;
         this.burnDPS = burnDPS;
         this.color = color;
-        this.radius = radius || 4;
+        this.radius = radius || 3; // уменьшен с 4 до 3
         this.speed = speed;
         this.tower = tower;
         this.maxRange = maxRange;
@@ -101,7 +101,8 @@ export class FlameBullet extends Bullet {
             return;
         }
 
-        this.sparks = createFlameSparks(startX, startY, 10, 150, 0.6);
+        // Уменьшено количество искр с 10 до 5
+        this.sparks = createFlameSparks(startX, startY, 5, 150, 0.6);
         this.explosionParticles = [];
     }
 
@@ -122,8 +123,9 @@ export class FlameBullet extends Bullet {
             if (this.trail[i].life <= 0) this.trail.splice(i, 1);
         }
         this.sparks = updateParticles(this.sparks, deltaTime);
-        if (Math.random() < 0.5) {
-            const newSparks = createFlameSparks(this.x, this.y, 3, 80, 0.3);
+        // Уменьшена частота добавления искр
+        if (Math.random() < 0.3) {
+            const newSparks = createFlameSparks(this.x, this.y, 2, 80, 0.3);
             this.sparks = this.sparks.concat(newSparks);
         }
         this.explosionParticles = updateParticles(this.explosionParticles, deltaTime);
@@ -150,10 +152,11 @@ export class FlameBullet extends Bullet {
             return;
         }
         drawParticles(ctx, this.sparks);
+        // Уменьшено количество рисуемых следов
         for (const t of this.trail) {
             const alpha = t.life / 0.3;
-            const r = this.radius * (0.5 + 0.5 * (t.life / 0.3));
-            ctx.globalAlpha = alpha * 0.6;
+            const r = this.radius * (0.3 + 0.7 * (t.life / 0.3));
+            ctx.globalAlpha = alpha * 0.5;
             ctx.fillStyle = '#ff6600';
             ctx.beginPath();
             ctx.arc(t.x, t.y, r, 0, Math.PI*2);
@@ -165,15 +168,16 @@ export class FlameBullet extends Bullet {
         }
         ctx.globalAlpha = 1;
         let radius = this.radius;
-        if (!isFinite(radius) || radius <= 0) radius = 4;
-        const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, radius * 2.5);
+        if (!isFinite(radius) || radius <= 0) radius = 3;
+        // Уменьшен радиус свечения
+        const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, radius * 2);
         grad.addColorStop(0, '#ffff00');
         grad.addColorStop(0.3, '#ff8800');
         grad.addColorStop(0.7, '#ff4400');
         grad.addColorStop(1, '#cc2200');
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, radius * 2.5, 0, Math.PI*2);
+        ctx.arc(this.x, this.y, radius * 2, 0, Math.PI*2);
         ctx.fill();
         ctx.fillStyle = 'rgba(255,255,200,0.9)';
         ctx.beginPath();
@@ -183,19 +187,18 @@ export class FlameBullet extends Bullet {
 }
 
 // ============================================================
-// ЗВУКОВАЯ ВОЛНА (DJ) – увеличен радиус и скорость
+// ЗВУКОВАЯ ВОЛНА (DJ)
 // ============================================================
 export class SoundWaveBullet extends FlameBullet {
     constructor(x, y, target, damage, color, radius, speed, angle, maxRange, slowFactor, tower) {
         super(x, y, target, 0, 0, color, radius, speed, angle, maxRange, tower);
         this.damage = damage;
         this.slowFactor = slowFactor;
-        this.radius = radius || 7; // увеличен радиус
-        this.speed = speed || 500; // увеличенная скорость
+        this.radius = radius || 7;
+        this.speed = speed || 500;
         this.sparks = createSparks(x, y, 10, 120, 0.5, '#aa88ff');
         this.trail = [];
         this.maxTrail = 10;
-        // пересчитываем vx/vy с новой скоростью
         const dx = target.x - x;
         const dy = target.y - y;
         const dist = Math.hypot(dx, dy);

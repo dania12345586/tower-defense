@@ -48,6 +48,7 @@ export class FlameTower extends Tower {
             this.target = this.findTarget(enemies);
         }
         if (this.target && this.cooldown <= 0) {
+            // Накладываем горение на всех врагов в радиусе
             for (const e of enemies) {
                 if (!e.isAlive()) continue;
                 if (!this.isInRange(e)) continue;
@@ -59,7 +60,7 @@ export class FlameTower extends Tower {
             const spread = 0.6;
             const baseAngle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
             const speed = 450;
-            for (let i = 0; i < count * 2; i++) {
+            for (let i = 0; i < count; i++) {
                 const angle = baseAngle + (Math.random() - 0.5) * spread;
                 const variantSpeed = speed * (0.8 + Math.random() * 0.4);
                 const fb = new FlameBullet(
@@ -69,7 +70,7 @@ export class FlameTower extends Tower {
                     this.burnDuration,
                     this.burnDamagePerSec,
                     '#ff8800',
-                    4,
+                    3, // уменьшен радиус снаряда
                     variantSpeed,
                     angle,
                     this.range,
@@ -104,7 +105,6 @@ export class FlameTower extends Tower {
             ctx.shadowBlur = 0;
         }
         if (this.level >= 3) {
-            // Искры по кругу
             for (let i = 0; i < 8; i++) {
                 const angle = (i / 8) * Math.PI*2 + time * 0.9;
                 const dist = r + 12 + 4 * Math.sin(time * 2 + i);
@@ -115,7 +115,6 @@ export class FlameTower extends Tower {
             }
         }
         if (this.level >= 4) {
-            // Пульсирующее кольцо
             ctx.strokeStyle = `rgba(255,68,0,${0.2 + 0.2 * Math.sin(time * 1.2)})`;
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -123,7 +122,6 @@ export class FlameTower extends Tower {
             ctx.stroke();
         }
         if (this.level === 5) {
-            // Максимум – огненные лучи
             for (let i = 0; i < 6; i++) {
                 const angle = (i / 6) * Math.PI*2 + time * 0.6;
                 const len = r + 22 + 6 * Math.sin(time * 1.4 + i * 0.8);
@@ -134,7 +132,6 @@ export class FlameTower extends Tower {
                 ctx.lineTo(this.x + Math.cos(angle) * len, this.y + Math.sin(angle) * len);
                 ctx.stroke();
             }
-            // Центральный огонь
             const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r + 8);
             grad.addColorStop(0, `rgba(255,100,0,${0.3 * (0.5 + 0.5 * Math.sin(time * 2))})`);
             grad.addColorStop(1, 'rgba(255,100,0,0)');

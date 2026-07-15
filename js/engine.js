@@ -198,7 +198,7 @@ export class GameEngine {
             if (e.key === 'Escape') {
                 this.selectedTowerType = null;
                 this.clearSelection();
-                this.ui.renderShop(this.state);
+                this.updateShopUI();
             }
         });
 
@@ -210,7 +210,7 @@ export class GameEngine {
             }
         });
 
-        this.ui.renderShop(this.state);
+        this.updateShopUI();
     }
 
     async startGame() {
@@ -329,7 +329,7 @@ export class GameEngine {
             this.startWaveBtn.textContent = 'Start Wave';
         }
 
-        this.ui.renderShop(this.state);
+        this.updateShopUI(); // вместо this.ui.renderShop
         this.ui.updateUI(this.state);
         this.renderLeaderboard();
         this.lastTime = performance.now();
@@ -341,7 +341,6 @@ export class GameEngine {
         this.renderLeaderboard();
     }
 
-    // ---- getTowerCost теперь возвращает стоимость дробовика ----
     getTowerCost(type) {
         const costs = {
             pistol: 60,
@@ -354,7 +353,6 @@ export class GameEngine {
         return costs[type] || 0;
     }
 
-    // ---- Рендер панели выбора башен (добавлен дробовик) ----
     updateShopUI() {
         if (!this.ui.shopItems) return;
         this.ui.shopItems.innerHTML = '';
@@ -598,7 +596,10 @@ export class GameEngine {
                     tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
                     if (tower) this.shotgunCount++;
                 }
-                if (tower) this.ui.updateUI(this.state);
+                if (tower) {
+                    this.ui.updateUI(this.state);
+                    this.updateShopUI();
+                }
             }
             return;
         }
@@ -668,6 +669,7 @@ export class GameEngine {
                 if (tower.type === 'shotgun') this.shotgunCount--;
                 this.clearSelection();
                 this.ui.updateUI(this.state);
+                this.updateShopUI();
             }
         );
     }

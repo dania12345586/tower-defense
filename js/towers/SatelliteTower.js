@@ -2,23 +2,22 @@ import { Tower } from './BaseTower.js';
 import { Bullet } from './Bullet.js';
 import { updateParticles } from '../vfx/particles.js';
 
-// Мгновенный лазер с взрывом
 class SatelliteLaser extends Bullet {
     constructor(x, y, target, damage, explosionRadius, tower) {
         super(x, y, target, damage, '#00ccff', 6, 9999, tower);
         this.explosionRadius = explosionRadius;
         this.isDead = false;
-        this.life = 0.1; // живёт 0.1 сек, чтобы успеть нарисоваться
+        this.life = 0.1;
         this.timer = 0;
         this.color = '#00ccff';
-        // Взрыв происходит сразу при создании (наносит урон)
+        this.explosionParticles = [];
+        this.flashAlpha = 1.0;
         this.explode();
     }
 
     explode() {
         const cx = this.target.x;
         const cy = this.target.y;
-        // Наносим урон всем врагам в радиусе взрыва
         for (const e of window.game.state.enemies) {
             if (!e.isAlive()) continue;
             const dx = e.x - cx;
@@ -28,31 +27,27 @@ class SatelliteLaser extends Bullet {
                 if (this.tower) this.tower.addDamage(this.damage);
             }
         }
-        // Создаём визуальный взрыв (частицы)
-        if (window.game) {
-            const particles = [];
-            const count = 30;
-            for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = 50 + Math.random() * 150;
-                const life = 0.3 + Math.random() * 0.5;
-                const radius = 3 + Math.random() * 6;
-                const color = Math.random() > 0.5 ? '#00ccff' : '#66eeff';
-                particles.push({
-                    x: cx + (Math.random() - 0.5) * 10,
-                    y: cy + (Math.random() - 0.5) * 10,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    life: life,
-                    maxLife: life,
-                    radius: radius,
-                    color: color
-                });
-            }
-            // Добавляем частицы в глобальный массив (можно через window.game.particles)
-            // Но проще – добавить их в объект взрыва, который будет рисоваться в draw
-            this.explosionParticles = particles;
+        const particles = [];
+        const count = 60;
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 80 + Math.random() * 250;
+            const life = 0.4 + Math.random() * 0.4;
+            const radius = 3 + Math.random() * 7;
+            const color = Math.random() > 0.3 ? '#00ccff' : '#66eeff';
+            particles.push({
+                x: cx + (Math.random() - 0.5) * 20,
+                y: cy + (Math.random() - 0.5) * 20,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: life,
+                maxLife: life,
+                radius: radius,
+                color: color
+            });
         }
+        this.explosionParticles = particles;
+        this.flashAlpha = 1.0;
     }
 
     update(deltaTime) {
@@ -60,20 +55,16 @@ class SatelliteLaser extends Bullet {
         if (this.timer >= this.life) {
             this.isDead = true;
         }
-        // Обновляем частицы взрыва
-        if (this.explosionParticles) {
-            for (const p of this.explosionParticles) {
-                p.x += p.vx * deltaTime;
-                p.y += p.vy * deltaTime;
-                p.life -= deltaTime;
-            }
-            this.explosionParticles = this.explosionParticles.filter(p => p.life > 0);
+        for (const p of this.explosionParticles) {
+            p.x += p.vx * deltaTime;
+            p.y += p.vy * deltaTime;
+            p.life -= deltaTime;
         }
+        this.explosionParticles = this.explosionParticles.filter(p => p.life > 0);
+        this.flashAlpha *= 0.95;
     }
 
     draw(ctx) {
-        if (this.isDead && (!this.explosionParticles || this.explosionParticles.length === 0)) return;
-        // Рисуем лазер (луч от башни до цели)
         if (!this.isDead) {
             const startX = this.tower.x;
             const startY = this.tower.y;
@@ -83,28 +74,39 @@ class SatelliteLaser extends Bullet {
             ctx.strokeStyle = '#00ccff';
             ctx.lineWidth = 4;
             ctx.shadowColor = '#00ccff';
-            ctx.shadowBlur = 20;
+            ctx.shadowBlur = 30;
             ctx.beginPath();
             ctx.moveTo(startX, startY);
             ctx.lineTo(endX, endY);
             ctx.stroke();
             ctx.restore();
         }
-        // Рисуем взрыв (частицы)
-        if (this.explosionParticles) {
-            for (const p of this.explosionParticles) {
-                const alpha = p.life / p.maxLife;
-                ctx.globalAlpha = alpha;
-                ctx.fillStyle = p.color;
-                ctx.shadowColor = p.color;
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius * alpha, 0, Math.PI*2);
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-            ctx.shadowBlur = 0;
+        if (this.flashAlpha > 0.01) {
+            const cx = this.target.x;
+            const cy = this.target.y;
+            ctx.save();
+            ctx.globalAlpha = this.flashAlpha * 0.5;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 40;
+            ctx.beginPath();
+            ctx.arc(cx, cy, this.explosionRadius * 0.6, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.restore();
         }
+        for (const p of this.explosionParticles) {
+            const alpha = p.life / p.maxLife;
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = p.color;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius * (0.3 + 0.7 * alpha), 0, Math.PI*2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
     }
 }
 
@@ -119,7 +121,7 @@ export class SatelliteTower extends Tower {
         this.baseDamage = 30;
         this.damage = 30;
         this.fireRate = 2.0;
-        this.explosionRadius = 30;
+        this.explosionRadius = 50;
         this.buffPercent = 8;
         this.cost = 400;
         this.upgradeCost = 500;
@@ -130,7 +132,6 @@ export class SatelliteTower extends Tower {
         this.totalDamage = 0;
         this.shootFlash = 0;
         this.particles = [];
-        // Для анимации вращения
         this.angle = 0;
         this.pulse = 0;
     }
@@ -140,7 +141,7 @@ export class SatelliteTower extends Tower {
         this.level++;
         this.baseDamage = Math.floor(this.baseDamage * 1.35);
         this.fireRate = Math.max(1.5, this.fireRate * 0.92);
-        this.explosionRadius = Math.floor(this.explosionRadius * 1.15);
+        this.explosionRadius = Math.floor(this.explosionRadius * 1.2);
         this.buffPercent += 3;
         this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
@@ -156,12 +157,9 @@ export class SatelliteTower extends Tower {
             this.stunnedUntil -= deltaTime;
             return;
         }
-
-        // Анимация вращения
         this.angle += deltaTime * 1.5;
         this.pulse = 0.5 + 0.5 * Math.sin(Date.now() / 500);
 
-        // Бафф дальности
         const buffMult = 1 + this.buffPercent / 100;
         for (const tower of window.game.state.towers) {
             if (tower === this) continue;
@@ -175,7 +173,6 @@ export class SatelliteTower extends Tower {
             }
         }
 
-        // Атака лазером
         if (this.target) {
             if (!this.target.isAlive() || !this.isInRange(this.target)) {
                 this.target = null;
@@ -202,7 +199,6 @@ export class SatelliteTower extends Tower {
 
     shoot(bullets) {
         if (!this.target) return;
-        // Создаём мгновенный лазер с взрывом
         const laser = new SatelliteLaser(this.x, this.y, this.target, this.damage, this.explosionRadius, this);
         bullets.push(laser);
         if (window.game && window.game.playSound) {
@@ -224,9 +220,8 @@ export class SatelliteTower extends Tower {
         const r = 15;
         const time = Date.now() / 1000;
 
-        // ---- Анимированные улучшения ----
+        // ---- Анимация спутника (уже есть) ----
         if (this.level >= 2) {
-            // Вращающееся кольцо
             ctx.strokeStyle = '#00ccff';
             ctx.lineWidth = 1.5;
             ctx.globalAlpha = 0.4 + 0.2 * Math.sin(time * 2);
@@ -235,9 +230,7 @@ export class SatelliteTower extends Tower {
             ctx.stroke();
             ctx.globalAlpha = 1;
         }
-
         if (this.level >= 3) {
-            // Два вращающихся кольца
             ctx.strokeStyle = '#33ddff';
             ctx.lineWidth = 1;
             ctx.globalAlpha = 0.3;
@@ -250,9 +243,7 @@ export class SatelliteTower extends Tower {
             ctx.stroke();
             ctx.globalAlpha = 1;
         }
-
         if (this.level >= 4) {
-            // Пульсирующие точки по кругу
             const count = 8;
             for (let i = 0; i < count; i++) {
                 const ang = (i / count) * Math.PI * 2 + time * 0.8;
@@ -264,9 +255,7 @@ export class SatelliteTower extends Tower {
                 ctx.fill();
             }
         }
-
         if (this.level === 5) {
-            // Максимальный уровень – яркое свечение, мерцающие лучи
             for (let i = 0; i < 6; i++) {
                 const ang = (i / 6) * Math.PI * 2 + time * 0.5;
                 const len = r + 24 + 6 * Math.sin(time * 1.2 + i * 0.7);
@@ -277,7 +266,6 @@ export class SatelliteTower extends Tower {
                 ctx.lineTo(this.x + Math.cos(ang) * len, this.y + Math.sin(ang) * len);
                 ctx.stroke();
             }
-            // Центральное свечение
             const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r + 10);
             grad.addColorStop(0, `rgba(0, 204, 255, ${0.3 * this.pulse})`);
             grad.addColorStop(1, 'rgba(0, 204, 255, 0)');
@@ -287,7 +275,6 @@ export class SatelliteTower extends Tower {
             ctx.fill();
         }
 
-        // ---- Показ радиуса баффа (серый пунктир) ----
         if (this.showRange) {
             ctx.strokeStyle = 'rgba(136,136,136,0.3)';
             ctx.lineWidth = 1;

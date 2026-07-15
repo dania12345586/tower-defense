@@ -5,6 +5,7 @@ import { updateParticles } from '../vfx/particles.js';
 export class FlameTower extends Tower {
     constructor(x, y) {
         super(x, y, 'flame');
+        this.particles = [];
     }
 
     findTarget(enemies) {
@@ -83,5 +84,64 @@ export class FlameTower extends Tower {
             }
         }
         this.particles = updateParticles(this.particles, deltaTime);
+    }
+
+    draw(ctx) {
+        // Вызов базового draw, который рисует саму башню
+        super.draw(ctx);
+
+        const r = 15;
+        const time = Date.now() / 1000;
+
+        // ---- Анимированные улучшения для огнемёта ----
+        if (this.level >= 2) {
+            ctx.shadowColor = '#ff6600';
+            ctx.shadowBlur = 20 * (0.5 + 0.5 * Math.sin(time * 2.5));
+            ctx.fillStyle = 'rgba(255,102,0,0.05)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, r + 4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        if (this.level >= 3) {
+            // Искры по кругу
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI*2 + time * 0.9;
+                const dist = r + 12 + 4 * Math.sin(time * 2 + i);
+                ctx.fillStyle = `rgba(255,136,0,${0.2 + 0.3 * Math.sin(time * 1.8 + i)})`;
+                ctx.beginPath();
+                ctx.arc(this.x + Math.cos(angle) * dist, this.y + Math.sin(angle) * dist, 2 + Math.sin(time * 1.5 + i), 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+        if (this.level >= 4) {
+            // Пульсирующее кольцо
+            ctx.strokeStyle = `rgba(255,68,0,${0.2 + 0.2 * Math.sin(time * 1.2)})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, r + 16 + 4 * Math.sin(time * 1.8), 0, Math.PI*2);
+            ctx.stroke();
+        }
+        if (this.level === 5) {
+            // Максимум – огненные лучи
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI*2 + time * 0.6;
+                const len = r + 22 + 6 * Math.sin(time * 1.4 + i * 0.8);
+                ctx.strokeStyle = `rgba(255,100,0,${0.15 + 0.2 * Math.sin(time * 1.1 + i)})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x + Math.cos(angle) * (r + 6), this.y + Math.sin(angle) * (r + 6));
+                ctx.lineTo(this.x + Math.cos(angle) * len, this.y + Math.sin(angle) * len);
+                ctx.stroke();
+            }
+            // Центральный огонь
+            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r + 8);
+            grad.addColorStop(0, `rgba(255,100,0,${0.3 * (0.5 + 0.5 * Math.sin(time * 2))})`);
+            grad.addColorStop(1, 'rgba(255,100,0,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, r + 8, 0, Math.PI*2);
+            ctx.fill();
+        }
     }
 }

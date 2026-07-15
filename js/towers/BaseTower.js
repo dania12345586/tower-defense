@@ -31,8 +31,8 @@ export class Tower {
         }
         this.baseDamage = this.damage;
         this.baseFireRate = this.fireRate;
-        this.baseRange = this.range;          // базовая дальность для баффа
-        this.rangeBuffMultiplier = 1;          // множитель баффа дальности
+        this.baseRange = this.range;
+        this.rangeBuffMultiplier = 1;
         this.buffDamageMult = 1;
         this.buffFireRateMult = 1;
         this.isBuffed = false;
@@ -41,7 +41,6 @@ export class Tower {
         this.totalCost = this.cost;
     }
 
-    // ---- Бафф дальности ----
     applyRangeBuff(mult) {
         this.rangeBuffMultiplier = mult;
         this.range = Math.floor(this.baseRange * this.rangeBuffMultiplier);
@@ -112,13 +111,11 @@ export class Tower {
         return best;
     }
 
-    // ----- ИСПРАВЛЕННАЯ ПРОВЕРКА ДАЛЬНОСТИ (по краю врага) -----
+    // Исправленная дальность по краю врага
     isInRange(enemy) {
         const dx = enemy.x - this.x;
         const dy = enemy.y - this.y;
-        const dist = Math.hypot(dx, dy);
-        // Проверяем, что расстояние до центра врага меньше радиуса башни + радиус врага
-        return dist <= this.range + enemy.radius;
+        return Math.hypot(dx, dy) <= this.range + enemy.radius;
     }
 
     shoot(bullets) {
@@ -149,8 +146,6 @@ export class Tower {
             this.slowFactor = Math.max(0.70, this.slowFactor - 0.025);
             this.baseDamage = Math.floor(this.baseDamage * 1.3);
             this.upgradeCost = Math.floor(this.upgradeCost * 1.4);
-        } else if (this.type === 'satellite') {
-            // Апгрейды спутника обрабатываются в SatelliteTower.js
         }
         this.totalCost += this.upgradeCost;
         if (this.isBuffed) {
@@ -178,7 +173,6 @@ export class Tower {
         return null;
     }
 
-    // ----- ДОБАВЛЕН БАФФ ДАЛЬНОСТИ В СТАТЫ -----
     getStats() {
         let stats = {
             'Уровень': this.level + '/' + this.maxLevel,
@@ -222,13 +216,10 @@ export class Tower {
             if (buff.damage > 0) stats['Бафф урона (акт.)'] = '+' + buff.damage + '%';
             if (buff.fireRate > 0) stats['Бафф скорости (акт.)'] = '+' + buff.fireRate + '%';
         }
-
-        // Показываем, если есть бафф дальности от спутника
         if (this.rangeBuffMultiplier !== 1) {
             const bonus = Math.round((this.rangeBuffMultiplier - 1) * 100);
             stats['Бафф дальности (акт.)'] = '+' + bonus + '%';
         }
-
         return stats;
     }
 
@@ -261,7 +252,7 @@ export class Tower {
                 damage = Math.floor(damage * 1.3);
                 upgradeCost = Math.floor(upgradeCost * 1.4);
             } else if (this.type === 'satellite') {
-                // Не обрабатываем здесь, так как апгрейд спутника переопределён
+                // спутник апгрейдится отдельно
             }
         }
 
@@ -285,13 +276,12 @@ export class Tower {
             stats['Замедление'] = (1 - slowFactor) * 100 + '%';
             stats['Волн'] = burstCount;
             dps = damage / fireRate;
-        } else if (this.type === 'satellite') {
-            // Для спутника не используем getStatsForLevel
         }
         stats['DPS'] = dps.toFixed(1);
         return stats;
     }
 
+    // ----- ВИЗУАЛЬНЫЕ УЛУЧШЕНИЯ ДЛЯ ПИСТОЛЕТЧИКА (и для всех, если type === 'pistol') -----
     draw(ctx) {
         if (this.showRange) {
             ctx.fillStyle = 'rgba(255,255,255,0.08)';
@@ -304,6 +294,9 @@ export class Tower {
         }
 
         const r = 15;
+        const time = Date.now() / 1000;
+
+        // Базовая башня
         ctx.fillStyle = '#333';
         ctx.fillRect(this.x - r - 2, this.y - r - 2, (r+2)*2, (r+2)*2);
         ctx.fillStyle = this.color;
@@ -312,15 +305,67 @@ export class Tower {
         ctx.lineWidth = this.level >= 2 ? 3 : 2;
         ctx.strokeRect(this.x - r, this.y - r, r*2, r*2);
 
-        // Дополнительные визуальные эффекты для разных типов (оставим как в оригинале)
+        // ---- Пистолетчик: анимированные улучшения ----
         if (this.type === 'pistol') {
-            // ... (можно оставить как было)
-        } else if (this.type === 'flame') {
-            // ...
-        } else if (this.type === 'dj') {
-            // ...
+            if (this.level >= 2) {
+                // Лёгкое свечение
+                ctx.shadowColor = '#4444ff';
+                ctx.shadowBlur = 15 * (0.5 + 0.5 * Math.sin(time * 2));
+                ctx.fillStyle = 'rgba(68,68,255,0.05)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r + 4, 0, Math.PI*2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            if (this.level >= 3) {
+                // Вращающиеся линии
+                ctx.strokeStyle = '#4444ff';
+                ctx.lineWidth = 1.5;
+                ctx.globalAlpha = 0.3 + 0.2 * Math.sin(time * 1.5);
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i / 4) * Math.PI*2 + time * 0.6;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + Math.cos(angle) * (r + 4), this.y + Math.sin(angle) * (r + 4));
+                    ctx.lineTo(this.x + Math.cos(angle) * (r + 12), this.y + Math.sin(angle) * (r + 12));
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+            }
+            if (this.level >= 4) {
+                // Мерцающие точки
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI*2 + time * 0.8;
+                    const dist = r + 14 + 3 * Math.sin(time * 1.2 + i);
+                    ctx.fillStyle = `rgba(68,68,255,${0.3 + 0.3 * Math.sin(time * 1.5 + i)})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x + Math.cos(angle) * dist, this.y + Math.sin(angle) * dist, 2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+            if (this.level >= 5) {
+                // Максимум – яркие лучи
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI*2 + time * 0.4;
+                    const len = r + 18 + 5 * Math.sin(time * 1.8 + i * 0.5);
+                    ctx.strokeStyle = `rgba(68,68,255,${0.15 + 0.15 * Math.sin(time * 1.2 + i)})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + Math.cos(angle) * (r + 6), this.y + Math.sin(angle) * (r + 6));
+                    ctx.lineTo(this.x + Math.cos(angle) * len, this.y + Math.sin(angle) * len);
+                    ctx.stroke();
+                }
+                // Центральный пульс
+                const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r + 6);
+                grad.addColorStop(0, `rgba(68,68,255,${0.2 * (0.5 + 0.5 * Math.sin(time * 2))})`);
+                grad.addColorStop(1, 'rgba(68,68,255,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r + 6, 0, Math.PI*2);
+                ctx.fill();
+            }
         }
 
+        // ----- Остальной общий код -----
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';

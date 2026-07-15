@@ -559,6 +559,7 @@ export class GameEngine {
     }
 
     handleMouseMove(x, y) {
+        if (!this.map) return;
         this.hoveredCell = this.map.pixelToGrid(x, y);
     }
 

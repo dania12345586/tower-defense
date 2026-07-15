@@ -74,8 +74,7 @@ export class ShotgunTower extends Tower {
         this.upgradeCost = 350;
         this.maxLevel = 5;
         this.totalCost = 250;
-        this.currentBurst = 0;
-        this.burstTimer = 0;
+        this.currentBurst = 0;           // сколько выстрелов сделано
         this.reloading = false;
         this.reloadTimer = 0;
         this.cooldown = 0;
@@ -110,21 +109,13 @@ export class ShotgunTower extends Tower {
         if (this.target) {
             if (!this.target.isAlive() || !this.isInRange(this.target)) {
                 this.target = null;
-                // Если не в перезарядке – сбрасываем прогресс
-                if (!this.reloading) {
-                    this.currentBurst = 0;
-                    this.burstTimer = 0;
-                }
-                // Если в перезарядке – продолжаем перезарядку, не сбрасываем
+                // НЕ СБРАСЫВАЕМ ПАТРОНЫ И НЕ ПРЕРЫВАЕМ ПЕРЕЗАРЯДКУ
             }
         }
         if (!this.target) {
             this.target = this.findTarget(enemies);
-            if (this.target && !this.reloading) {
-                // Если цель найдена и не в перезарядке – сбрасываем счётчик патронов, начинаем с нуля
-                this.currentBurst = 0;
-                this.burstTimer = 0;
-            }
+            // При появлении новой цели НЕ СБРАСЫВАЕМ ПАТРОНЫ
+            // Просто продолжаем с текущим состоянием
         }
 
         // ---- Если цели нет – просто обновляем частицы ----
@@ -135,16 +126,23 @@ export class ShotgunTower extends Tower {
             return;
         }
 
-        // ---- Перезарядка ----
+        // ---- Перезарядка (если она идёт) ----
         if (this.reloading) {
             this.reloadTimer -= deltaTime;
             if (this.reloadTimer <= 0) {
                 this.reloading = false;
-                this.currentBurst = 0;
+                this.currentBurst = 0;   // патроны восстановлены
                 this.cooldown = 0;
                 this.reloadTimer = 0;
-                // после перезарядки сразу можно стрелять
             }
+            return;
+        }
+
+        // ---- Если патроны закончились, начинаем перезарядку ----
+        if (this.currentBurst >= this.bursts) {
+            this.reloading = true;
+            this.reloadTimer = this.reloadTime;
+            this.currentBurst = this.bursts; // показываем полную полоску как пустую
             return;
         }
 
@@ -160,11 +158,9 @@ export class ShotgunTower extends Tower {
         this.cooldown = this.fireRate;
         this.shootFlash = 0.1;
 
-        // ---- Проверка на окончание патронов ----
+        // ---- Проверка на окончание патронов (после выстрела) ----
         if (this.currentBurst >= this.bursts) {
-            this.reloading = true;
-            this.reloadTimer = this.reloadTime;
-            this.currentBurst = 0; // не обязательно, но сбросим
+            // Перезарядка начнётся на следующем кадре (в условии выше)
         }
 
         if (this.particles) {
@@ -220,7 +216,7 @@ export class ShotgunTower extends Tower {
             // Патроны – сегменты
             const segments = this.bursts;
             const segWidth = barWidth / segments;
-            const filled = this.currentBurst; // сколько уже потрачено
+            const filled = this.currentBurst; // сколько уже потрачено (0 = полный магазин)
             for (let i = 0; i < segments; i++) {
                 const segX = x + i * segWidth;
                 const isFilled = (i < segments - filled);

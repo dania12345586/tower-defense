@@ -4,7 +4,7 @@ import { updateParticles } from '../vfx/particles.js';
 
 class ShotgunBullet extends Bullet {
     constructor(x, y, target, damage, tower) {
-        super(x, y, target, damage, '#A0522D', 4, 500, tower); // цвет снарядов тоже коричневый
+        super(x, y, target, damage, '#A0522D', 4, 500, tower);
         this.piercing = true;
         this.hitEnemies = new Set();
         this.startX = x;
@@ -62,8 +62,7 @@ class ShotgunBullet extends Bullet {
 export class ShotgunTower extends Tower {
     constructor(x, y) {
         super(x, y, 'shotgun');
-        this.color = '#A0522D'; // коричневый
-        // ---- ХАРАКТЕРИСТИКИ ----
+        this.color = '#A0522D';
         this.baseDamage = 24;
         this.damage = 24;
         this.range = 100;
@@ -75,7 +74,6 @@ export class ShotgunTower extends Tower {
         this.upgradeCost = 350;
         this.maxLevel = 5;
         this.totalCost = 250;
-        // Состояние
         this.currentBurst = 0;
         this.burstTimer = 0;
         this.reloading = false;
@@ -108,23 +106,28 @@ export class ShotgunTower extends Tower {
             return;
         }
 
+        // ---- Поиск цели ----
         if (this.target) {
             if (!this.target.isAlive() || !this.isInRange(this.target)) {
                 this.target = null;
-                this.currentBurst = 0;
-                this.burstTimer = 0;
-                this.reloading = false;
+                // Если не в перезарядке – сбрасываем прогресс
+                if (!this.reloading) {
+                    this.currentBurst = 0;
+                    this.burstTimer = 0;
+                }
+                // Если в перезарядке – продолжаем перезарядку, не сбрасываем
             }
         }
         if (!this.target) {
             this.target = this.findTarget(enemies);
-            if (this.target) {
+            if (this.target && !this.reloading) {
+                // Если цель найдена и не в перезарядке – сбрасываем счётчик патронов, начинаем с нуля
                 this.currentBurst = 0;
                 this.burstTimer = 0;
-                this.reloading = false;
             }
         }
 
+        // ---- Если цели нет – просто обновляем частицы ----
         if (!this.target) {
             if (this.particles) {
                 this.particles = updateParticles(this.particles, deltaTime);
@@ -132,6 +135,7 @@ export class ShotgunTower extends Tower {
             return;
         }
 
+        // ---- Перезарядка ----
         if (this.reloading) {
             this.reloadTimer -= deltaTime;
             if (this.reloadTimer <= 0) {
@@ -139,24 +143,28 @@ export class ShotgunTower extends Tower {
                 this.currentBurst = 0;
                 this.cooldown = 0;
                 this.reloadTimer = 0;
+                // после перезарядки сразу можно стрелять
             }
             return;
         }
 
+        // ---- Кулдаун между выстрелами ----
         if (this.cooldown > 0) {
             this.cooldown -= deltaTime;
             return;
         }
 
+        // ---- Выстрел ----
         this.shoot(bullets);
         this.currentBurst++;
         this.cooldown = this.fireRate;
         this.shootFlash = 0.1;
 
+        // ---- Проверка на окончание патронов ----
         if (this.currentBurst >= this.bursts) {
             this.reloading = true;
             this.reloadTimer = this.reloadTime;
-            this.currentBurst = 0;
+            this.currentBurst = 0; // не обязательно, но сбросим
         }
 
         if (this.particles) {
@@ -202,15 +210,17 @@ export class ShotgunTower extends Tower {
         const y = this.y - 25;
 
         if (this.reloading) {
+            // Перезарядка – прогресс
             const progress = 1 - (this.reloadTimer / this.reloadTime);
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fillRect(x, y, barWidth, barHeight);
             ctx.fillStyle = '#A0522D';
             ctx.fillRect(x, y, barWidth * progress, barHeight);
         } else {
+            // Патроны – сегменты
             const segments = this.bursts;
             const segWidth = barWidth / segments;
-            const filled = this.currentBurst;
+            const filled = this.currentBurst; // сколько уже потрачено
             for (let i = 0; i < segments; i++) {
                 const segX = x + i * segWidth;
                 const isFilled = (i < segments - filled);
@@ -219,7 +229,7 @@ export class ShotgunTower extends Tower {
             }
         }
 
-        // ---- Визуальные улучшения при апгрейдах (коричневые тона) ----
+        // ---- Визуальные улучшения при апгрейдах ----
         if (this.level >= 2) {
             ctx.strokeStyle = '#A0522D';
             ctx.lineWidth = 2;

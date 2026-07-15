@@ -1,22 +1,52 @@
-// js/core/GameState.js
+// Состояние игры: золото, жизни, волны, враги, башни
 export class GameState {
     constructor() {
         this.gold = 120;
-        this.coins = 0;
         this.lives = 20;
         this.wave = 1;
         this.waveIndex = 0;
         this.score = 0;
+        this.coins = 0;
         this.gameOver = false;
         this.victory = false;
         this.isPaused = false;
         this.timeScale = 1;
-        this.waveInProgress = false;
+        this.isMultiplayer = false;
+        this.syncEnabled = false;
+        this.myPlayerId = null;
+        this.roomId = null;
+        this.isHost = false;
+        this.selectedMap = 'default';
         this.enemies = [];
         this.towers = [];
         this.bullets = [];
-        this.selectedTowerType = null;
-        this.selectedTower = null;
+        this.unlockedTowers = ['pistol', 'flame', 'dj'];
+        this.selectedTowers = ['pistol', 'flame', 'dj'];
+        this.achievements = [];
+        this.userId = null;
+        this.username = null;
+        this.coinRewards = {
+            'default': 25,
+            'forest': 25,
+            'lunar': 30,
+            'snow': 50,
+            'mushroom': 75,
+            'volcano': 150
+        };
+        // Лимиты башен
+        this.flameTowerCount = 0;
+        this.maxFlameTowers = 2;
+        this.djTowerCount = 0;
+        this.maxDjTowers = 1;
+        this.shockerCount = 0;
+        this.maxShockers = 3;
+        this.pistolCount = 0;
+        this.maxPistols = 4;
+        this.laserCount = 0;
+        this.maxLasers = 2;
+    }
+
+    resetMultiplayer() {
         this.isMultiplayer = false;
         this.syncEnabled = false;
         this.myPlayerId = null;
@@ -24,22 +54,8 @@ export class GameState {
         this.isHost = false;
     }
 
-    reset() {
-        this.gold = 120;
-        this.coins = 0;
-        this.lives = 20;
-        this.wave = 1;
-        this.waveIndex = 0;
-        this.score = 0;
-        this.gameOver = false;
-        this.victory = false;
-        this.isPaused = false;
-        this.timeScale = 1;
-        this.waveInProgress = false;
-        this.enemies = [];
-        this.towers = [];
-        this.bullets = [];
-        this.selectedTowerType = null;
-        this.selectedTower = null;
+    getTowerCost(type) {
+        const costs = { pistol: 60, flame: 200, dj: 280, electric: 95, laser: 1000 };
+        return costs[type] || 0;
     }
 }

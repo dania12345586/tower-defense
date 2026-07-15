@@ -1,83 +1,91 @@
-// js/core/WaveManager.js
 import { WAVES } from '../configs/waveConfig.js';
-import { updateGameState } from '../sync.js';
 
 export class WaveManager {
-    constructor(state, enemyManager, onUpdateUI, onGameComplete) {
+    constructor(state, enemyManager, uiManager) {
         this.state = state;
         this.enemyManager = enemyManager;
-        this.onUpdateUI = onUpdateUI;
-        this.onGameComplete = onGameComplete;
-        this.isFirstWave = true;
-        this.waveTimer = 0;
+        this.ui = uiManager;
+        this.waveInProgress = false;
+        this.enemiesSpawned = 0;
+        this.enemiesToSpawn = 0;
+        this.currentWaveData = null;
+        this.spawnTimer = 0;
+        this.spawnDelay = 1.0;
+        this.waveGroups = [];
+        this.waveGroupIndex = 0;
+        this.waveGroupCounter = 0;
     }
 
     startWave() {
-        if (this.state.waveInProgress) return;
+        if (this.waveInProgress) return;
         if (this.state.enemies.some(e => e.isAlive())) return;
         if (this.state.victory) return;
         if (this.state.waveIndex >= WAVES.length) {
             console.log('Все волны пройдены!');
             return;
         }
-        console.log(`🌊 Запуск волны ${this.state.waveIndex + 1}`);
-        const waveData = WAVES[this.state.waveIndex];
-        this.enemyManager.startWave(waveData, this.state.isMultiplayer);
-        this.state.waveInProgress = true;
-        this.onUpdateUI();
-
-        if (this.state.syncEnabled && this.state.isHost) {
-            updateGameState({
-                wave: this.state.wave,
-                wave_index: this.state.waveIndex,
-                enemies: this.state.enemies.map(e => e.toJSON ? e.toJSON() : e)
-            });
+        this.waveInProgress = true;
+        this.enemiesSpawned = 0;
+        this.currentWaveData = WAVES[this.state.waveIndex];
+        this.enemiesToSpawn = 0;
+        this.waveGroups = [];
+        for (const g of this.currentWaveData.enemies) {
+            let count = g.count;
+            if (this.state.selectedMap === 'volcano') count *= 2;
+            if (this.state.isMultiplayer && this.state.waveIndex > 3) {
+                count = Math.floor(count * 1.2);
+            }
+            this.enemiesToSpawn += count;
+            this.waveGroups.push({ type: g.type, count });
         }
+        this.spawnDelay = this.currentWaveData.delay;
+        this.spawnTimer = 0;
+        this.waveGroupIndex = 0;
+        this.waveGroupCounter = 0;
+        this.state.currentPathIndex = 0;
+        this.ui.updateUI(this.state);
     }
 
     update(deltaTime) {
-        if (!this.state.waveInProgress) return;
-        this.enemyManager.spawnTimer += deltaTime;
-        if (this.enemyManager.spawnTimer >= this.enemyManager.spawnDelay && 
-            this.enemyManager.enemiesSpawned < this.enemyManager.enemiesToSpawn) {
-            this.enemyManager.spawnEnemy();
-            this.enemyManager.enemiesSpawned++;
-            this.enemyManager.spawnTimer = 0;
+        if (!this.waveInProgress) return;
+        this.spawnTimer += deltaTime;
+        if (this.spawnTimer >= this.spawnDelay && this.enemiesSpawned < this.enemiesToSpawn) {
+            const group = this.waveGroups[this.waveGroupIndex];
+            this.enemyManager.spawnEnemyFromWave(group, this.state.waveIndex);
+            this.enemiesSpawned++;
+            this.waveGroupCounter++;
+            if (this.waveGroupCounter >= group.count) {
+                this.waveGroupIndex++;
+                this.waveGroupCounter = 0;
+            }
+            this.spawnTimer = 0;
         }
-        if (this.enemyManager.isWaveComplete()) {
-            this.completeWave();
+        if (this.enemiesSpawned >= this.enemiesToSpawn && this.state.enemies.length === 0) {
+            this.endWave();
         }
     }
 
-    completeWave() {
-        this.state.waveInProgress = false;
+    endWave() {
+        this.waveInProgress = false;
         this.state.waveIndex++;
         this.state.wave++;
         const bonus = 15 + this.state.wave * 3;
         const finalBonus = this.state.isMultiplayer ? Math.floor(bonus * 0.7) : bonus;
         this.state.gold += finalBonus;
         this.state.score += 20;
-        this.onUpdateUI();
-
-        console.log(`✅ Волна ${this.state.waveIndex} завершена`);
+        this.ui.updateUI(this.state);
 
         if (this.state.waveIndex >= WAVES.length) {
             this.state.victory = true;
-            this.onGameComplete('victory');
+            this.state.gameEnded = true;
+            const reward = this.state.coinRewards[this.state.selectedMap] || 0;
+            this.state.coins += reward;
+            // Очистка комнаты будет в engine.js
             return;
         }
-
-        if (this.state.syncEnabled && this.state.isHost) {
-            updateGameState({
-                wave: this.state.wave,
-                wave_index: this.state.waveIndex
-            });
-        }
-
-        if (this.isFirstWave) this.isFirstWave = false;
-
+        // Автозапуск следующей волны через 1.5 сек
         setTimeout(() => {
-            if (!this.state.gameOver && !this.state.victory && !this.state.waveInProgress) {
+            if (!this.state.gameOver && !this.state.victory && !this.waveInProgress) {
                 this.startWave();
             }
         }, 1500);

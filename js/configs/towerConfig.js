@@ -81,12 +81,25 @@ export const TOWER_TYPES = {
         fireRate: 0.7,
         cost: 250,
         upgradeCost: 350,
-        color: '#A0522D',          // коричневый, чтобы отличать от огнемёта
+        color: '#A0522D',
         maxLevel: 5,
         burnDamagePerSec: 0,
         label: 'Дробовик',
         icon: '💥',
         desc: 'Мощный залп, пробивные пули (лейт-гейм)'
+    },
+    satellite: {
+        range: 1000,
+        damage: 30,
+        fireRate: 2.0,
+        cost: 400,
+        upgradeCost: 500,
+        color: '#888888',
+        maxLevel: 5,
+        burnDamagePerSec: 0,
+        label: 'Спутник',
+        icon: '📡',
+        desc: 'Баффает дальность, атакует лазером с взрывом'
     }
 };
 

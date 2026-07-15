@@ -7,10 +7,10 @@ import { UIManager } from './core/UIManager.js';
 import { getSelectedTowers } from './ui/menu.js';
 import { loadProgress, saveProgress, supabase } from './auth.js';
 import { initSync, sendAction, updateGameState, unsubscribeSync, getGameState } from './sync.js';
-import { updateTowerPanel } from './ui/towerPanel.js';
 import { Bullet, FlameBullet, SoundWaveBullet } from './towers/Bullet.js';
 import { DJTower } from './towers/DJTower.js';
 import { ShotgunTower } from './towers/ShotgunTower.js';
+import { SatelliteTower } from './towers/SatelliteTower.js';
 
 export class GameEngine {
     constructor() {
@@ -45,8 +45,18 @@ export class GameEngine {
         this.toggleAdminBtn = document.getElementById('toggleAdminPanel');
         this.leaderboardList = document.getElementById('leaderboardList');
 
+        // Лимиты
         this.shotgunCount = 0;
         this.maxShotguns = 4;
+        this.satelliteCount = 0;
+        this.maxSatellites = 1;
+
+        // Другие лимиты (из GameState)
+        this.state.maxPistols = 4;
+        this.state.maxFlameTowers = 2;
+        this.state.maxDjTowers = 1;
+        this.state.maxShockers = 3;
+        this.state.maxLasers = 2;
 
         this.loadSounds();
         this.loadMusic();
@@ -141,8 +151,7 @@ export class GameEngine {
 
     init() {
         this.state.selectedTowers = getSelectedTowers() || ['pistol', 'flame', 'dj'];
-        // Сразу рендерим панель
-        this.renderShopPanel();
+        this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType);
 
         const playBtn = document.getElementById('mapSelectPlayBtn');
         if (playBtn) {
@@ -200,11 +209,11 @@ export class GameEngine {
             if (e.key === 'Escape') {
                 this.selectedTowerType = null;
                 this.clearSelection();
-                this.renderShopPanel();
+                this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType);
             }
         });
 
-        // Обработчики клика по элементам панели – делегирование
+        // Делегирование кликов по панели
         document.addEventListener('click', (e) => {
             const item = e.target.closest('.shop-item');
             if (item && item.dataset.tower) {
@@ -212,7 +221,6 @@ export class GameEngine {
                 this.selectTowerType(type);
             }
         });
-        // Для тач-событий
         document.addEventListener('touchstart', (e) => {
             const item = e.target.closest('.shop-item');
             if (item && item.dataset.tower) {
@@ -222,37 +230,7 @@ export class GameEngine {
             }
         }, { passive: false });
 
-        this.renderShopPanel();
-    }
-
-    // ---- Единый метод рендеринга панели выбора башен ----
-    renderShopPanel() {
-        const container = document.getElementById('shopItems');
-        if (!container) return;
-        container.innerHTML = '';
-        const configs = {
-            pistol: { label: '🔫 Пистолетчик', cost: 60 },
-            flame: { label: '🔥 Огнемёт', cost: 200 },
-            dj: { label: '🎧 DJ', cost: 280 },
-            electric: { label: '⚡ Электрошокер', cost: 95 },
-            laser: { label: '🔴 Лазер', cost: 1000 },
-            shotgun: { label: '💥 Дробовик', cost: 250 }
-        };
-        // Рендерим только те башни, которые есть в selectedTowers
-        for (const type of this.state.selectedTowers) {
-            const cfg = configs[type];
-            if (!cfg) continue;
-            const el = document.createElement('div');
-            el.className = 'shop-item';
-            el.dataset.tower = type;
-            el.innerHTML = `<span>${cfg.label}</span><small>${cfg.cost}💰</small>`;
-            container.appendChild(el);
-        }
-        // Обновляем подсказку
-        const hint = document.getElementById('shopHint');
-        if (hint) {
-            hint.textContent = this.selectedTowerType ? `Выбрано: ${this.selectedTowerType}` : 'Кликните по иконке для выбора';
-        }
+        this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType);
     }
 
     getTowerCost(type) {
@@ -262,7 +240,8 @@ export class GameEngine {
             dj: 280,
             electric: 95,
             laser: 1000,
-            shotgun: 250
+            shotgun: 250,
+            satellite: 400
         };
         return costs[type] || 0;
     }
@@ -291,19 +270,15 @@ export class GameEngine {
             }
         }
 
-        // ---- Принудительно добавляем дробовик в выбранные, если он разблокирован ----
         let selected = getSelectedTowers() || ['pistol', 'flame', 'dj'];
-        if (this.state.unlockedTowers.includes('shotgun') && !selected.includes('shotgun')) {
-            if (selected.length < 4) {
-                selected.push('shotgun');
-            } else {
-                selected[selected.length - 1] = 'shotgun';
+        for (const t of this.state.unlockedTowers) {
+            if (!selected.includes(t) && selected.length < 4) {
+                selected.push(t);
             }
-            window._selectedTowers = selected;
         }
         this.state.selectedTowers = selected;
+        window._selectedTowers = selected;
 
-        // ---- Мультиплеер ----
         this.state.isMultiplayer = window._isMultiplayer || false;
         if (this.state.isMultiplayer) {
             this.state.roomId = window._multiplayerRoomId;
@@ -371,6 +346,7 @@ export class GameEngine {
         this.state.pistolCount = 0;
         this.state.laserCount = 0;
         this.shotgunCount = 0;
+        this.satelliteCount = 0;
 
         this.towerManager = new TowerManager(this.state, this.map, this.ui);
         this.enemyManager = new EnemyManager(this.state, this.map, this.ui);
@@ -384,11 +360,16 @@ export class GameEngine {
             this.startWaveBtn.textContent = 'Start Wave';
         }
 
-        this.renderShopPanel();
+        this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType);
         this.ui.updateUI(this.state);
         this.renderLeaderboard();
         this.lastTime = performance.now();
         this.gameLoop();
+    }
+
+    updateUI() {
+        this.ui.updateUI(this.state);
+        this.renderLeaderboard();
     }
 
     applyGameState(state) {
@@ -438,12 +419,6 @@ export class GameEngine {
 
     handleAction(action) {
         console.log('⚡ Действие от другого игрока:', action);
-    }
-
-    // ---- Обновление UI (прокси) ----
-    updateUI() {
-        this.ui.updateUI(this.state);
-        this.renderLeaderboard();
     }
 
     gameLoop() {
@@ -511,7 +486,8 @@ export class GameEngine {
             else if (this.selectedTowerType === 'dj') previewRange = 140;
             else if (this.selectedTowerType === 'electric') previewRange = 155;
             else if (this.selectedTowerType === 'laser') previewRange = 220;
-            else if (this.selectedTowerType === 'shotgun') previewRange = 140;
+            else if (this.selectedTowerType === 'shotgun') previewRange = 100;
+            else if (this.selectedTowerType === 'satellite') previewRange = 150; // внутренний радиус баффа
 
             this.ctx.fillStyle = canBuild && enoughGold ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)';
             this.ctx.beginPath();
@@ -560,7 +536,7 @@ export class GameEngine {
         if (this.selectedTowerType) {
             if (!this.state.selectedTowers.includes(this.selectedTowerType)) {
                 this.selectedTowerType = null;
-                this.renderShopPanel();
+                this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType);
                 return;
             }
             const { gridX, gridY } = this.map.pixelToGrid(x, y);
@@ -609,6 +585,13 @@ export class GameEngine {
                     }
                     tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
                     if (tower) this.shotgunCount++;
+                } else if (this.selectedTowerType === 'satellite') {
+                    if (this.satelliteCount >= this.maxSatellites) {
+                        this.ui.showHint('Достигнут лимит спутников (1)!');
+                        return;
+                    }
+                    tower = this.towerManager.build(this.selectedTowerType, tx, ty, gridX, gridY);
+                    if (tower) this.satelliteCount++;
                 }
                 if (tower) this.ui.updateUI(this.state);
             }
@@ -645,13 +628,13 @@ export class GameEngine {
             const cost = this.getTowerCost(type);
             if (this.state.gold < cost) {
                 this.ui.showHint('Недостаточно золота!');
-                setTimeout(() => this.renderShopPanel(), 1000);
+                setTimeout(() => this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType), 1000);
                 return;
             }
             this.selectedTowerType = type;
         }
         this.clearSelection();
-        this.renderShopPanel();
+        this.ui.renderShopPanel(this.state.selectedTowers, this.selectedTowerType);
     }
 
     selectTower(tower) {
@@ -671,13 +654,14 @@ export class GameEngine {
     }
 
     updateTowerPanel() {
-        updateTowerPanel(
+        this.ui.updateTowerPanel(
             this.selectedTower,
             this.state.gold,
             () => this.towerManager.upgrade(this.selectedTower),
             (tower, price) => {
                 this.towerManager.sell(tower);
                 if (tower.type === 'shotgun') this.shotgunCount--;
+                else if (tower.type === 'satellite') this.satelliteCount--;
                 this.clearSelection();
                 this.ui.updateUI(this.state);
             }

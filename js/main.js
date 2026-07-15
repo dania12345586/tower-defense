@@ -17,7 +17,6 @@ let userId = null;
 let rememberMe = true;
 let achievements = [];
 
-// Достижения
 const ACHIEVEMENTS = {
     FIRST_WIN: {
         id: 'first_win',
@@ -54,7 +53,7 @@ function renderSelectedTowers() {
         container.innerHTML = '<span style="color:#888; font-size:0.9rem;">Ничего не выбрано</span>';
         return;
     }
-    const icons = { pistol: '🔫', flame: '🔥', dj: '🎧', electric: '⚡', laser: '🔴', shotgun: '💥' };
+    const icons = { pistol: '🔫', flame: '🔥', dj: '🎧', electric: '⚡', laser: '🔴', shotgun: '💥', satellite: '📡' };
     selectedTowers.forEach(type => {
         const span = document.createElement('span');
         span.className = 'selected-tower-icon';
@@ -143,7 +142,8 @@ function renderShopModal() {
     container.innerHTML = '';
     const items = [
         { id: 'electric', label: '⚡ Электрошокер', cost: 150, unlocked: unlockedTowers.includes('electric') },
-        { id: 'laser', label: '🔴 Лазер', cost: 400, unlocked: unlockedTowers.includes('laser') }
+        { id: 'laser', label: '🔴 Лазер', cost: 400, unlocked: unlockedTowers.includes('laser') },
+        { id: 'satellite', label: '📡 Спутник', cost: 800, unlocked: unlockedTowers.includes('satellite') }
     ];
     items.forEach(item => {
         const div = document.createElement('div');
@@ -216,7 +216,6 @@ function closeAchievementsModal() {
     document.getElementById('achievementsModal').style.display = 'none';
 }
 
-// Проверка достижений (вызывается при победе)
 window.checkAchievements = function(state) {
     if (!state || !state.userId) return;
     let newAchievements = [];
@@ -228,11 +227,9 @@ window.checkAchievements = function(state) {
         if (newAchievements.includes('first_win')) {
             if (!unlockedTowers.includes('shotgun')) {
                 unlockedTowers.push('shotgun');
-                // Автоматически добавляем дробовик в выбранные башни
                 if (selectedTowers.length < MAX_TOWERS) {
                     selectedTowers.push('shotgun');
                 } else {
-                    // заменяем последнюю
                     selectedTowers[selectedTowers.length - 1] = 'shotgun';
                 }
                 window._selectedTowers = selectedTowers;

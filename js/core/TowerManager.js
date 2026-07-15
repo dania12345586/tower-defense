@@ -1,4 +1,4 @@
-import { Tower, FlameTower, DJTower, ElectricTower, LaserTower, ShotgunTower } from '../towers/index.js';
+import { Tower, FlameTower, DJTower, ElectricTower, LaserTower, ShotgunTower, SatelliteTower } from '../towers/index.js';
 import { sendAction } from '../sync.js';
 
 export class TowerManager {
@@ -49,7 +49,10 @@ export class TowerManager {
                 }
                 break;
             case 'shotgun':
-                // Лимит дробовиков проверяется в engine, здесь не нужен
+                // лимит проверяется в engine
+                break;
+            case 'satellite':
+                // лимит проверяется в engine
                 break;
         }
         return true;
@@ -88,7 +91,11 @@ export class TowerManager {
                 break;
             case 'shotgun':
                 tower = new ShotgunTower(tx, ty);
-                // Счётчик дробовиков увеличивается в engine
+                // счётчик в engine
+                break;
+            case 'satellite':
+                tower = new SatelliteTower(tx, ty);
+                // счётчик в engine
                 break;
             default:
                 return null;
@@ -131,7 +138,7 @@ export class TowerManager {
             case 'dj': this.state.djTowerCount--; break;
             case 'electric': this.state.shockerCount--; break;
             case 'laser': this.state.laserCount--; break;
-            case 'shotgun': /* счётчик уменьшается в engine */ break;
+            // shotgun и satellite уменьшаются в engine
         }
         const price = Math.floor(tower.totalCost * 0.15);
         this.state.gold += price;

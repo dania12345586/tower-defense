@@ -76,12 +76,12 @@ export const TOWER_TYPES = {
         desc: 'Постоянный урон, зарядка на цели (поздняя игра)'
     },
     shotgun: {
-        range: 140,
+        range: 100,
         damage: 24,
-        fireRate: 0.6,
+        fireRate: 0.7,
         cost: 250,
         upgradeCost: 350,
-        color: '#ff8800',
+        color: '#A0522D',          // коричневый, чтобы отличать от огнемёта
         maxLevel: 5,
         burnDamagePerSec: 0,
         label: 'Дробовик',

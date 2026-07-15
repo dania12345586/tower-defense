@@ -4,14 +4,13 @@ import { updateParticles } from '../vfx/particles.js';
 
 class ShotgunBullet extends Bullet {
     constructor(x, y, target, damage, tower) {
-        super(x, y, target, damage, '#ffaa00', 4, 500, tower);
+        super(x, y, target, damage, '#A0522D', 4, 500, tower); // цвет снарядов тоже коричневый
         this.piercing = true;
         this.hitEnemies = new Set();
         this.startX = x;
         this.startY = y;
         this.vx = 0;
         this.vy = 0;
-        // Вместо target будем использовать направление
     }
 
     update(deltaTime, enemies) {
@@ -47,13 +46,13 @@ class ShotgunBullet extends Bullet {
     draw(ctx) {
         if (this.isDead) return;
         ctx.fillStyle = this.color;
-        ctx.shadowColor = '#ffaa00';
+        ctx.shadowColor = '#A0522D';
         ctx.shadowBlur = 10;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
         ctx.fill();
         ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(255,170,0,0.3)';
+        ctx.fillStyle = 'rgba(160,82,45,0.3)';
         ctx.beginPath();
         ctx.arc(this.x - 4, this.y - 4, this.radius * 0.6, 0, Math.PI*2);
         ctx.fill();
@@ -63,11 +62,12 @@ class ShotgunBullet extends Bullet {
 export class ShotgunTower extends Tower {
     constructor(x, y) {
         super(x, y, 'shotgun');
-        this.color = '#ff8800';
+        this.color = '#A0522D'; // коричневый
+        // ---- ХАРАКТЕРИСТИКИ ----
         this.baseDamage = 24;
         this.damage = 24;
-        this.range = 140;
-        this.fireRate = 0.6;
+        this.range = 100;
+        this.fireRate = 0.7;
         this.bulletsPerShot = 5;
         this.bursts = 3;
         this.reloadTime = 2.5;
@@ -75,6 +75,7 @@ export class ShotgunTower extends Tower {
         this.upgradeCost = 350;
         this.maxLevel = 5;
         this.totalCost = 250;
+        // Состояние
         this.currentBurst = 0;
         this.burstTimer = 0;
         this.reloading = false;
@@ -193,30 +194,45 @@ export class ShotgunTower extends Tower {
 
     draw(ctx) {
         super.draw(ctx);
+
+        // ---- Полоска патронов (над башней) ----
+        const barWidth = 30;
+        const barHeight = 4;
+        const x = this.x - barWidth/2;
+        const y = this.y - 25;
+
         if (this.reloading) {
             const progress = 1 - (this.reloadTimer / this.reloadTime);
-            const barWidth = 30;
-            const barHeight = 4;
-            const x = this.x - barWidth/2;
-            const y = this.y + 20;
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fillRect(x, y, barWidth, barHeight);
-            ctx.fillStyle = '#ff8800';
+            ctx.fillStyle = '#A0522D';
             ctx.fillRect(x, y, barWidth * progress, barHeight);
+        } else {
+            const segments = this.bursts;
+            const segWidth = barWidth / segments;
+            const filled = this.currentBurst;
+            for (let i = 0; i < segments; i++) {
+                const segX = x + i * segWidth;
+                const isFilled = (i < segments - filled);
+                ctx.fillStyle = isFilled ? '#A0522D' : 'rgba(100,100,100,0.5)';
+                ctx.fillRect(segX, y, segWidth - 1, barHeight);
+            }
         }
+
+        // ---- Визуальные улучшения при апгрейдах (коричневые тона) ----
         if (this.level >= 2) {
-            ctx.strokeStyle = '#ffaa00';
+            ctx.strokeStyle = '#A0522D';
             ctx.lineWidth = 2;
             ctx.strokeRect(this.x - 18, this.y - 18, 36, 36);
         }
         if (this.level >= 3) {
-            ctx.fillStyle = 'rgba(255,170,0,0.1)';
+            ctx.fillStyle = 'rgba(160,82,45,0.15)';
             ctx.beginPath();
             ctx.arc(this.x, this.y, 20, 0, Math.PI*2);
             ctx.fill();
         }
         if (this.level >= 4) {
-            ctx.fillStyle = '#ff6600';
+            ctx.fillStyle = '#8B4513';
             ctx.beginPath();
             ctx.arc(this.x - 5, this.y - 5, 3, 0, Math.PI*2);
             ctx.fill();
@@ -224,7 +240,7 @@ export class ShotgunTower extends Tower {
             ctx.fill();
         }
         if (this.level === 5) {
-            ctx.fillStyle = '#ff4400';
+            ctx.fillStyle = '#5C2E00';
             ctx.beginPath();
             ctx.arc(this.x - 10, this.y, 4, 0, Math.PI*2);
             ctx.fill();

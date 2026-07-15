@@ -10,6 +10,14 @@ class LaserBeam extends Bullet {
         this.timer = 0;
         this.color = '#ff44ff';
         this.chargePercent = tower ? tower.charge / tower.maxCharge : 0;
+        // Меняем цвет в зависимости от уровня башни
+        if (tower) {
+            const lv = tower.level;
+            if (lv >= 5) this.color = '#ff00ff';
+            else if (lv >= 4) this.color = '#ff88ff';
+            else if (lv >= 3) this.color = '#ff66aa';
+            else this.color = '#ff44ff';
+        }
     }
 
     update(deltaTime) {
@@ -30,6 +38,7 @@ class LaserBeam extends Bullet {
         const endX = this.target ? this.target.x : this.x;
         const endY = this.target ? this.target.y : this.y;
 
+        // Толщина и яркость зависят от заряда
         const thickness = 2 + this.chargePercent * 6;
         const alpha = 0.6 + this.chargePercent * 0.4;
 
@@ -37,7 +46,7 @@ class LaserBeam extends Bullet {
         ctx.globalAlpha = alpha;
         ctx.strokeStyle = this.color;
         ctx.lineWidth = thickness;
-        ctx.shadowColor = '#ff44ff';
+        ctx.shadowColor = this.color;
         ctx.shadowBlur = 20 + this.chargePercent * 30;
         ctx.beginPath();
         ctx.moveTo(startX, startY);
@@ -61,15 +70,13 @@ export class LaserTower extends Tower {
     constructor(x, y) {
         super(x, y, 'laser');
         this.color = '#ff44ff';
-        // ---- ФИКСИРОВАННАЯ СКОРОСТЕЛЬНОСТЬ: 50 ВЫСТРЕЛОВ/СЕК ----
         this.baseDamage = 2;
         this.chargeRate = 2;
         this.maxCharge = 4;
-        this.fireRate = 0.02;          // 1/50 = 0.02 сек между выстрелами
+        this.fireRate = 0.02;
         this.range = 220;
         this.cost = 1000;
         this.upgradeCost = 700;
-        // Состояние
         this.charge = 0;
         this.currentTarget = null;
         this.chargeTimer = 0;
@@ -87,7 +94,6 @@ export class LaserTower extends Tower {
         this.chargeRate += 0.2;
         this.maxCharge += 0.5;
         this.range = Math.floor(this.range * 1.01);
-        // Скорость атаки НЕ МЕНЯЕТСЯ
         this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
         this.totalCost += this.upgradeCost;
         this.damage = this.baseDamage;
@@ -103,12 +109,10 @@ export class LaserTower extends Tower {
             return;
         }
 
-        // Кулдаун для стрельбы
         if (this.cooldown > 0) {
             this.cooldown -= deltaTime;
         }
 
-        // Поиск цели
         if (this.target) {
             if (!this.target.isAlive() || !this.isInRange(this.target)) {
                 this.target = null;
@@ -124,7 +128,6 @@ export class LaserTower extends Tower {
             }
         }
 
-        // Зарядка (накапливается непрерывно, пока есть цель)
         if (this.target) {
             this.chargeTimer += deltaTime;
             if (this.chargeTimer >= 0.1) {
@@ -133,10 +136,8 @@ export class LaserTower extends Tower {
                 this.chargeTimer = 0;
             }
 
-            // Стрельба с фиксированным интервалом
             if (this.cooldown <= 0) {
                 const currentDamage = this.baseDamage + this.charge;
-                // Баффы применяются в BaseTower, но для простоты оставляем
                 let finalDamage = currentDamage;
                 if (this.isBuffed) {
                     finalDamage = Math.floor(currentDamage * this.buffDamageMult);
@@ -144,7 +145,7 @@ export class LaserTower extends Tower {
                 const beam = new LaserBeam(this.x, this.y, this.target, finalDamage, this);
                 bullets.push(beam);
                 this.shootFlash = 0.05;
-                this.cooldown = this.fireRate; // сброс кулдауна
+                this.cooldown = this.fireRate;
             }
         }
 
@@ -164,6 +165,8 @@ export class LaserTower extends Tower {
 
     draw(ctx) {
         super.draw(ctx);
+
+        // ---- Индикатор заряда ----
         if (this.target && this.charge > 0) {
             const chargePercent = this.charge / this.maxCharge;
             const barWidth = 30;
@@ -174,6 +177,60 @@ export class LaserTower extends Tower {
             ctx.fillRect(x, y, barWidth, barHeight);
             ctx.fillStyle = '#ff44ff';
             ctx.fillRect(x, y, barWidth * chargePercent, barHeight);
+        }
+
+        // ---- Визуальные улучшения при апгрейдах ----
+        const r = 15;
+        if (this.level >= 2) {
+            // Свечение
+            ctx.shadowColor = '#ff44ff';
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = 'rgba(255,68,255,0.05)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, r + 5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        if (this.level >= 3) {
+            // Дополнительные кольца
+            ctx.strokeStyle = '#ff88ff';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, r + 8, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        if (this.level >= 4) {
+            // Маленькие искорки
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 + Date.now() / 2000;
+                const dist = r + 12;
+                ctx.fillStyle = '#ff44ff';
+                ctx.beginPath();
+                ctx.arc(this.x + Math.cos(angle) * dist, this.y + Math.sin(angle) * dist, 2, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+        if (this.level === 5) {
+            // Максимальный уровень – яркое свечение и мерцание
+            const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 300);
+            ctx.shadowColor = '#ff44ff';
+            ctx.shadowBlur = 40 * pulse;
+            ctx.fillStyle = `rgba(255,68,255,${0.1 * pulse})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, r + 15, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            // Мерцающие точки
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2 + Date.now() / 1500;
+                const dist = r + 10 + 5 * Math.sin(Date.now() / 500 + i);
+                ctx.fillStyle = `rgba(255,68,255,${0.5 + 0.5 * Math.sin(Date.now() / 400 + i)})`;
+                ctx.beginPath();
+                ctx.arc(this.x + Math.cos(angle) * dist, this.y + Math.sin(angle) * dist, 2 + Math.sin(Date.now() / 300 + i), 0, Math.PI*2);
+                ctx.fill();
+            }
         }
     }
 }
